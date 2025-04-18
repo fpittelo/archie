@@ -28,15 +28,16 @@ body {
 
 .epfl-header h1 {
     margin: 0;
-    font-size: 1.8em;
-    font-weight: normal;
+    font-size: 2.8em;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
     /* Color is inherited from .epfl-header */
 }
 
 /* Style for the logo inside the H1 */
 .epfl-header h1 .header-logo {
     height: 0.84em; /* Sets height relative to H1 font-size (1.2em * 0.7 = 0.84em for 30% reduction) */
-    vertical-align: text-bottom; /* Aligns the logo vertically with the text */
     margin-right: 0.5em; /* Adds space between logo and text */
 }
 /* Optional: Add a hover effect for the logo */
@@ -67,6 +68,7 @@ h2 {
     padding-bottom: 5px;
     margin-bottom: 20px;
     font-weight: normal;
+    font-size: 1em; /* CHANGED: Font size to 1em */
 }
 
 /* Form Styling */
@@ -77,7 +79,6 @@ h2 {
 label {
     display: block;
     margin-bottom: 5px;
-    font-weight: bold;
     color: #000; /* CHANGED: Label text to black */
 }
 

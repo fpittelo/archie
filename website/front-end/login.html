@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Archie AI</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Optional EPFL favicon link -->
+    <!-- <link rel="icon" href="media/epfl-favicon.ico"> -->
+</head>
+<body>
+
+    <!-- ======= Header (Same as before) ======= -->
+    <header class="epfl-header">
+        <div class="container">
+            <h1>
+                <img src="media/epfl-logo.svg" alt="EPFL Logo" class="header-logo">
+                Archie AI
+            </h1>
+        </div>
+    </header>
+
+    <!-- ======= Main Content ======= -->
+    <main class="container">
+        <section class="login-section">
+            <h2>Login Required</h2>
+            <p>Log in with your EPFL account to access Archie AI.</p>
+
+            <!-- Login button - styling comes from existing button rules -->
+            <button type="button" id="login-button">Login with EPFL Account</button>
+
+            <div id="login-error" class="error" style="display: none;"></div>
+            <div id="login-loading" style="display: none; margin-top: 15px;">
+                <p>Redirecting to EPFL login...</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- ======= Footer (Same as before) ======= -->
+    <footer class="epfl-footer">
+        <div class="container">
+            <p>&copy; Archie, Your Enterprise Architecture Assistant</p>
+        </div>
+    </footer>
+
+    <!-- ======= MSAL Library ======= -->
+    <!-- Include MSAL Browser library (get from CDN or npm install) -->
+    <script src="https://alcdn.msauth.net/browser/2.30.0/js/msal-browser.min.js"
+        integrity="sha384-o4ufwq3oKqc7IoCcUhC06oDRVPpUPelN4QUahn3+V7dQyQDBUf2U2a+VfNxFT/6I"
+        crossorigin="anonymous"></script>
+
+    <!-- ======= Login Logic using MSAL ======= -->
+    <script src="auth.js"></script> <!-- Renamed JS file for clarity -->
+
+</body>
+</html>
