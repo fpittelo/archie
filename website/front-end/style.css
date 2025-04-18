@@ -1,0 +1,158 @@
+/* Basic Reset & Body */
+body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    color: #000; /* CHANGED: Default text color to black */
+    background-color: #fff; /* Ensure background is white */
+}
+
+/* Container for centering content */
+.container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Header Styling */
+.epfl-header {
+    background-color: #fff; /* CHANGED: Header background to white */
+    color: #000; /* CHANGED: Header text to black */
+    padding: 15px 0;
+    margin-bottom: 30px;
+    /* REMOVED: border-top: 3px solid white; (No longer needed/visible) */
+    /* Optional: Add a subtle bottom border if desired */
+    /* border-bottom: 1px solid #eee; */
+}
+
+.epfl-header h1 {
+    margin: 0;
+    font-size: 1.8em;
+    font-weight: normal;
+    /* Color is inherited from .epfl-header */
+}
+
+/* Style for the logo inside the H1 */
+.epfl-header h1 .header-logo {
+    height: 0.84em; /* Sets height relative to H1 font-size (1.2em * 0.7 = 0.84em for 30% reduction) */
+    vertical-align: text-bottom; /* Aligns the logo vertically with the text */
+    margin-right: 0.5em; /* Adds space between logo and text */
+}
+/* Optional: Add a hover effect for the logo */
+.epfl-header h1 .header-logo:hover {
+    opacity: 0.8; /* Slightly fade the logo on hover */
+}
+
+/* Optional Logo Styling (if you add one) */
+.epfl-header .logo {
+    height: 10px;
+    float: right;
+    margin-top: 5px;     
+}
+
+/* Main Content Area */
+main {
+    padding-bottom: 40px;
+}
+
+/* Section Styling */
+section {
+    margin-bottom: 30px;
+}
+
+h2 {
+    color: #000; /* CHANGED: Headings to black */
+    border-bottom: 1px solid #ccc; /* CHANGED: Lighter, thinner border */
+    padding-bottom: 5px;
+    margin-bottom: 20px;
+    font-weight: normal;
+}
+
+/* Form Styling */
+.form-group { /* NOTE: Corrected typo from 'form-grup' in HTML */
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #000; /* CHANGED: Label text to black */
+}
+
+input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc; /* Keep light grey border */
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 1em;
+    background-color: #fff; /* Ensure input background is white */
+    color: #000; /* Ensure input text is black */
+}
+
+/* --- Button Styling (Unchanged as requested) --- */
+button[type="submit"] {
+    background-color: #CC0000; /* Keep EPFL Red */
+    color: white; /* Keep white text */
+    padding: 12px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.3s ease;
+}
+
+button[type="submit"]:hover {
+    background-color: #A30000; /* Keep darker red on hover */
+}
+/* --- End Button Styling --- */
+
+
+/* Results Area Styling */
+#results-area {
+    background-color: #f9f9f9; /* CHANGED: Very light grey, almost white */
+    border: 1px solid #eee; /* Keep very light border */
+    padding: 15px;
+    min-height: 100px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+    font-size: 0.9em;
+    border-radius: 4px;
+    color: #000; /* Ensure results text is black */
+}
+
+/* Loading Indicator */
+#loading-indicator p {
+    color: #000; /* CHANGED: Loading text to black */
+    font-style: italic;
+}
+
+/* Error Message Styling */
+.error {
+    color: #CC0000; /* Keep error text red */
+    background-color: #fff; /* CHANGED: White background */
+    border: 1px solid #CC0000; /* Keep red border */
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 4px;
+}
+
+
+/* Footer Styling */
+.epfl-footer {
+    background-color: #fff; /* CHANGED: Footer background to white */
+    color: #000; /* CHANGED: Footer text to black */
+    text-align: center;
+    padding: 15px 0;
+    margin-top: 40px;
+    font-size: 0.9em;
+    /* Optional: Add a subtle top border if desired */
+    /* border-top: 1px solid #eee; */
+}
+
+.epfl-footer p {
+    margin: 0;
+}
