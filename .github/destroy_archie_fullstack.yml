@@ -1,0 +1,94 @@
+# .github/workflows/destroy_archie_fullstack.yml
+name: Destroy Archie Full Stack
+
+# --- Workflow Triggers ---
+on:
+  workflow_dispatch: # Allow manual triggering from GitHub UI
+    inputs:
+      environment_suffix:
+        description: 'Environment to DESTROY (dev, qa, or main)'
+        required: true
+        type: choice
+        options:
+          - dev
+          - qa
+          - main
+
+# --- Permissions ---
+# Required for OIDC connection and Azure CLI actions
+permissions:
+  id-token: write
+  contents: read
+
+# --- Jobs ---
+jobs:
+  destroy_resources:
+    name: Destroy Azure Resources (${{ github.event.inputs.environment_suffix }})
+    runs-on: ubuntu-latest
+
+    # Link to GitHub Environment for secrets (OIDC)
+    environment:
+      name: archie_sec_${{ github.event.inputs.environment_suffix }}
+      # Note: No URL needed for destruction
+
+    env:
+      # --- Determine Resource Names based on Manual Input ---
+      ENVIRONMENT_SUFFIX: ${{ github.event.inputs.environment_suffix }}
+      AZURE_FUNCTIONAPP_NAME: archie-func-${{ github.event.inputs.environment_suffix }}
+
+      # --- !!! IMPORTANT ASSUMPTIONS - VERIFY AND UPDATE THESE !!! ---
+      # Assumption: Resource Group name follows this pattern. Update if different.
+      AZURE_RESOURCE_GROUP_NAME: rg-archie-${{ github.event.inputs.environment_suffix }}
+      # Assumption: Static Web App name follows this pattern. Update if different.
+      AZURE_STATIC_WEB_APP_NAME: archie-swa-${{ github.event.inputs.environment_suffix }}
+      # --- End Important Assumptions ---
+
+    steps:
+      - name: Checkout repository (optional, for consistency)
+        uses: actions/checkout@v4
+
+      - name: 'Azure Login using OIDC'
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}       # From GitHub Environment secrets
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}       # From GitHub Environment secrets
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }} # From GitHub Environment secrets
+
+      - name: Display Resources to be Deleted
+        run: |
+          echo "Attempting to delete the following resources:"
+          echo "Resource Group: ${{ env.AZURE_RESOURCE_GROUP_NAME }}"
+          echo "Function App:   ${{ env.AZURE_FUNCTIONAPP_NAME }}"
+          echo "Static Web App: ${{ env.AZURE_STATIC_WEB_APP_NAME }}"
+          echo "Subscription ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+          echo "Environment Suffix: ${{ env.ENVIRONMENT_SUFFIX }}"
+          echo "::warning::Verify these details carefully before proceeding if running manually!"
+          # Add a small delay if running manually to allow cancellation
+          # sleep 10
+
+      - name: Delete Azure Function App
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            echo "Attempting to delete Function App '${{ env.AZURE_FUNCTIONAPP_NAME }}' in resource group '${{ env.AZURE_RESOURCE_GROUP_NAME }}'..."
+            az functionapp delete --name "${{ env.AZURE_FUNCTIONAPP_NAME }}" --resource-group "${{ env.AZURE_RESOURCE_GROUP_NAME }}" --yes
+            echo "Function App deletion command executed (check Azure portal for status)."
+        # Continue even if deletion fails (e.g., resource already deleted)
+        # Be careful with continue-on-error, as it might mask real issues.
+        # Consider removing it if you want the workflow to fail on deletion errors.
+        continue-on-error: true
+
+      - name: Delete Azure Static Web App
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            echo "Attempting to delete Static Web App '${{ env.AZURE_STATIC_WEB_APP_NAME }}' in resource group '${{ env.AZURE_RESOURCE_GROUP_NAME }}'..."
+            # Note: SWA delete might take a moment to detach from the Function App if linked.
+            az staticwebapp delete --name "${{ env.AZURE_STATIC_WEB_APP_NAME }}" --resource-group "${{ env.AZURE_RESOURCE_GROUP_NAME }}" --yes
+            echo "Static Web App deletion command executed (check Azure portal for status)."
+        # Continue even if deletion fails (e.g., resource already deleted)
+        continue-on-error: true
+
+      - name: Azure Logout
+        run: az logout
+        if: always() # Ensure logout happens even if deletion steps fail

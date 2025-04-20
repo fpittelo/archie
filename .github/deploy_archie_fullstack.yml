@@ -1,0 +1,131 @@
+# .github/workflows/deploy_archie_fullstack.yml
+name: Deploy Archie Full Stack
+
+# --- Workflow Triggers ---
+on:
+  push:
+    branches:
+      - dev       # Trigger on push to dev branch
+      - qa        # Trigger on push to qa branch
+      - main      # Trigger on push to main branch
+  workflow_dispatch: # Allow manual triggering from GitHub UI
+
+# --- Permissions ---
+# Required for OIDC connection (backend) and reading repo contents
+permissions:
+  id-token: write
+  contents: read
+
+# --- Jobs ---
+jobs:
+  # --- Backend Deployment Job ---
+  build_and_deploy_backend:
+    name: Build and Deploy Backend (Azure Functions)
+    runs-on: ubuntu-latest
+
+    # Link to GitHub Environment for secrets (OIDC) and protection rules
+    environment:
+      name: ${{ (github.ref == 'refs/heads/dev' && 'archie_sec_dev') || (github.ref == 'refs/heads/qa' && 'archie_sec_qa') || (github.ref == 'refs/heads/main' && 'archie_sec_main') }}
+      url: ${{ steps.deploy_function_app.outputs.webapp-url }} # Function App URL
+
+    env:
+      AZURE_FUNCTIONAPP_NAME: ${{ (github.ref == 'refs/heads/dev' && 'archie-func-dev') || (github.ref == 'refs/heads/qa' && 'archie-func-qa') || (github.ref == 'refs/heads/main' && 'archie-func-main') }}
+      PYTHON_VERSION: '3.10'
+      # Assuming backend code (Function App) is at the repo root
+      AZURE_FUNCTIONAPP_PACKAGE_PATH: '.'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Python dependencies
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/requirements.txt --target="${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/.python_packages/lib/site-packages"
+
+      - name: 'Azure Login using OIDC'
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}       # From GitHub Environment secrets
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}       # From GitHub Environment secrets
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }} # From GitHub Environment secrets
+
+      - name: 'Deploy to Azure Function App'
+        id: deploy_function_app
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
+          package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+
+      - name: Azure Logout
+        run: az logout
+        if: always()
+
+  # --- Frontend Deployment Job ---
+  build_and_deploy_frontend:
+    name: Build and Deploy Frontend (Static Web App)
+    runs-on: ubuntu-latest
+    # This job can run in parallel with the backend job unless
+    # the frontend build needs outputs from the backend deployment.
+    # needs: build_and_deploy_backend # Uncomment if required
+
+    # Link to GitHub Environment for SWA deployment token secret
+    environment:
+      name: ${{ (github.ref == 'refs/heads/dev' && 'archie_sec_dev') || (github.ref == 'refs/heads/qa' && 'archie_sec_qa') || (github.ref == 'refs/heads/main' && 'archie_sec_main') }}
+      # URL for the Static Web App (this isn't automatically output by the deploy action)
+      # You might need to manually configure this in the GitHub Environment settings if desired.
+
+    env:
+      NODE_VERSION: '18' # Or the Node.js version your project requires
+      # --- IMPORTANT: Adjust these paths based on your repository structure ---
+      FRONTEND_APP_PATH: 'frontend'  # Path to the directory containing frontend source code (where package.json is)
+      FRONTEND_OUTPUT_PATH: 'dist'   # Name of the directory created by 'npm run build' INSIDE FRONTEND_APP_PATH
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          # Optional: Enable caching for faster builds
+          # cache: 'npm'
+          # cache-dependency-path: ${{ env.FRONTEND_APP_PATH }}/package-lock.json # Adjust path if needed
+
+      - name: Install Frontend Dependencies
+        # Ensure this runs in the correct directory
+        working-directory: ${{ env.FRONTEND_APP_PATH }}
+        run: npm ci # Uses package-lock.json for consistent installs, faster than 'npm install'
+
+      - name: Build Frontend Application
+        # Ensure this runs in the correct directory and uses your build script
+        working-directory: ${{ env.FRONTEND_APP_PATH }}
+        run: npm run build # Assumes 'build' script exists in frontend/package.json
+
+      - name: 'Deploy to Azure Static Web App'
+        id: deploy_static_web_app
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          # --- Required Tokens ---
+          # Fetches the correct deployment token from the GitHub Environment secrets
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }} # Required for the action to integrate with GitHub
+          action: "upload"
+
+          # --- Configuration ---
+          # IMPORTANT: These paths are relative to the REPOSITORY ROOT
+          app_location: ${{ env.FRONTEND_APP_PATH }} # e.g., 'frontend'
+          output_location: ${{ env.FRONTEND_OUTPUT_PATH }} # e.g., 'dist' - The *build output* folder name. IMPORTANT: Do NOT include app_location here again.
+          # api_location: "" # Leave empty or remove - we are deploying the API separately via Azure Functions job
+
+          # --- Optional Flags ---
+          # skip_app_build: true # Uncomment ONLY if you handle the build entirely outside this action (we are building above)
+          # skip_api_build: true # Recommended if API is deployed separately
+          # verbose: true # Add for more detailed logs during deployment if needed
