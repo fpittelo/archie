@@ -33,7 +33,7 @@ jobs:
     steps:
       - name: Set Global Environment Variables
         run: |
-          echo "AZURE_LOCATION='Switzerland North'" >> $GITHUB_ENV
+          echo "AZURE_LOCATION=Switzerland North" >> $GITHUB_ENV
           echo "ENV_SUFFIX=${{ github.ref == 'refs/heads/dev' && 'dev' || github.ref == 'refs/heads/qa' && 'qa' || github.ref == 'refs/heads/main' && 'main' }}" >> $GITHUB_ENV
           echo "AZURE_RESOURCE_GROUP_NAME=rg-archie-${{ env.ENV_SUFFIX }}" >> $GITHUB_ENV
           echo "AZURE_FUNCTIONAPP_NAME=archie-func-${{ env.ENV_SUFFIX }}" >> $GITHUB_ENV
@@ -142,7 +142,7 @@ jobs:
     steps:
       - name: Set Global Environment Variables
         run: |
-          echo "AZURE_LOCATION='Switzerland North'" >> $GITHUB_ENV
+          echo "AZURE_LOCATION=Switzerland North" >> $GITHUB_ENV
           echo "ENV_SUFFIX=${{ github.ref == 'refs/heads/dev' && 'dev' || github.ref == 'refs/heads/qa' && 'qa' || github.ref == 'refs/heads/main' && 'main' }}" >> $GITHUB_ENV
           echo "AZURE_RESOURCE_GROUP_NAME=rg-archie-${{ env.ENV_SUFFIX }}" >> $GITHUB_ENV
           echo "AZURE_STATIC_WEB_APP_NAME=archie-swa-${{ env.ENV_SUFFIX }}" >> $GITHUB_ENV
