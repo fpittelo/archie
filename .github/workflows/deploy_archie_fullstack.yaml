@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
 
     environment:
-      name: ${{ (github.ref == 'refs/heads/dev' && 'archie_sec_dev') || (github.ref == 'refs/heads/qa' && 'archie_sec_qa') || (github.ref == 'refs/heads/main' && 'archie_sec_main') }}
+      name: ${{ (github.ref == 'refs/heads/dev' && 'dev') || (github.ref == 'refs/heads/qa' && 'qa') || (github.ref == 'refs/heads/main' && 'main') }}
       # URL output is complex for Function Apps created via CLI, manually configure if needed.
 
     steps:
@@ -136,7 +136,7 @@ jobs:
     needs: build_and_deploy_backend # Ensure RG and backend infra exist first
 
     environment:
-      name: ${{ (github.ref == 'refs/heads/dev' && 'archie_sec_dev') || (github.ref == 'refs/heads/qa' && 'archie_sec_qa') || (github.ref == 'refs/heads/main' && 'archie_sec_main') }}
+      name: ${{ (github.ref == 'refs/heads/dev' && 'dev') || (github.ref == 'refs/heads/qa' && 'qa') || (github.ref == 'refs/heads/main' && 'main') }}
       # SWA URL can be retrieved via CLI if needed, but often manually set in Env settings
 
     steps:
