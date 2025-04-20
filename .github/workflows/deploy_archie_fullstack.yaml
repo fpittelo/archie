@@ -53,14 +53,14 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Create/Update Azure Resource Group
-        uses: azure/CLI@v1
+        uses: azure/CLI@v2
         with:
           inlineScript: |
             echo "Ensuring resource group ${{ env.AZURE_RESOURCE_GROUP_NAME }} exists in ${{ env.AZURE_LOCATION }}..."
             az group create --name "${{ env.AZURE_RESOURCE_GROUP_NAME }}" --location "${{ env.AZURE_LOCATION }}" --output none
 
       - name: Create/Update Azure Storage Account
-        uses: azure/CLI@v1
+        uses: azure/CLI@v2
         with:
           inlineScript: |
             echo "Ensuring storage account ${{ env.AZURE_STORAGE_ACCOUNT_NAME }} exists..."
@@ -74,7 +74,7 @@ jobs:
               --output none
 
       - name: Create/Update Azure Function App Plan (Consumption)
-        uses: azure/CLI@v1
+        uses: azure/CLI@v2
         with:
           inlineScript: |
             echo "Ensuring App Service plan ${{ env.AZURE_FUNCTIONAPP_PLAN_NAME }} exists..."
@@ -87,7 +87,7 @@ jobs:
               --output none
 
       - name: Create/Update Azure Function App
-        uses: azure/CLI@v1
+        uses: azure/CLI@v2
         with:
           inlineScript: |
             echo "Ensuring Function App ${{ env.AZURE_FUNCTIONAPP_NAME }} exists..."
@@ -162,14 +162,14 @@ jobs:
 
       # Resource Group creation is technically redundant due to 'needs', but harmless and good practice
       - name: Ensure Azure Resource Group Exists
-        uses: azure/CLI@v1
+        uses: azure/CLI@v2
         with:
           inlineScript: |
             echo "Ensuring resource group ${{ env.AZURE_RESOURCE_GROUP_NAME }} exists in ${{ env.AZURE_LOCATION }}..."
             az group create --name "${{ env.AZURE_RESOURCE_GROUP_NAME }}" --location "${{ env.AZURE_LOCATION }}" --output none
 
       - name: Create/Update Azure Static Web App Resource
-        uses: azure/CLI@v1
+        uses: azure/CLI@v2
         with:
           inlineScript: |
             echo "Ensuring Static Web App resource ${{ env.AZURE_STATIC_WEB_APP_NAME }} exists..."
@@ -190,7 +190,7 @@ jobs:
 
       - name: Get Static Web App Deployment Token
         id: swa_token
-        uses: azure/CLI@v1
+        uses: azure/CLI@v2
         with:
           inlineScript: |
             echo "Retrieving deployment token for ${{ env.AZURE_STATIC_WEB_APP_NAME }}..."
