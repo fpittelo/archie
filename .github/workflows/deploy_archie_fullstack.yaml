@@ -20,7 +20,7 @@ permissions:
 jobs:
   # --- Backend Deployment Job ---
   build_and_deploy_backend:
-    name: Build and Deploy Backend (Azure Functions)
+    name: Deploy Backend Azure Functions
     runs-on: ubuntu-latest
 
     # Link to GitHub Environment for secrets (OIDC) and protection rules
@@ -69,11 +69,11 @@ jobs:
 
   # --- Frontend Deployment Job ---
   build_and_deploy_frontend:
-    name: Build and Deploy Frontend (Static Web App)
+    name: Deploy Frontend Static Web App
     runs-on: ubuntu-latest
     # This job can run in parallel with the backend job unless
     # the frontend build needs outputs from the backend deployment.
-    # needs: build_and_deploy_backend # Uncomment if required
+    needs: build_and_deploy_backend # Uncomment if required
 
     # Link to GitHub Environment for SWA deployment token secret
     environment:
