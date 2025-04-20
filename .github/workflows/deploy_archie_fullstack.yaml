@@ -81,14 +81,12 @@ jobs:
               --name "${{ env.AZURE_FUNCTIONAPP_NAME }}" \
               --resource-group "${{ env.AZURE_RESOURCE_GROUP_NAME }}" \
               --storage-account "${{ env.AZURE_STORAGE_ACCOUNT_NAME }}" \
-              --consumption-plan-location "switzerlandnorth" \
+              --consumption-plan-location "${{ env.AZURE_LOCATION }}" \
               --runtime python \
               --runtime-version "${{ env.PYTHON_VERSION }}" \
               --functions-version 4 \
               --os-type Linux \
               --output none
-            # Optional: Configure CORS, settings etc. here if needed
-            # az functionapp cors add --name "${{ env.AZURE_FUNCTIONAPP_NAME }}" --resource-group "${{ env.AZURE_RESOURCE_GROUP_NAME }}" --allowed-origins '*' # Example CORS
 
       - name: Setup Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
@@ -109,7 +107,6 @@ jobs:
         with:
           app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
           package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
-          # No need to specify resource group here, app-name is unique identifier for this action
 
       - name: Azure Logout
         run: az logout
@@ -159,7 +156,6 @@ jobs:
         with:
           inlineScript: |
             echo "Ensuring Static Web App resource ${{ env.AZURE_STATIC_WEB_APP_NAME }} exists..."
-            # Check if SWA exists
             swa_exists=$(az staticwebapp show --name "${{ env.AZURE_STATIC_WEB_APP_NAME }}" --resource-group "${{ env.AZURE_RESOURCE_GROUP_NAME }}" --query name -o tsv 2>/dev/null)
             if [[ -z "$swa_exists" ]]; then
               echo "Static Web App not found, creating..."
@@ -167,7 +163,7 @@ jobs:
                 --name "${{ env.AZURE_STATIC_WEB_APP_NAME }}" \
                 --resource-group "${{ env.AZURE_RESOURCE_GROUP_NAME }}" \
                 --location "${{ env.AZURE_LOCATION }}" \
-                --source /dev/null --branch main # Dummy source/branch needed for creation, we upload manually
+                --source /dev/null --branch main \
                 --output none
               echo "Static Web App created."
             else

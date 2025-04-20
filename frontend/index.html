@@ -3,64 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EPFL Archie Your EA Query Tool</title>
-    <link rel="stylesheet" href="style.css">
-    <!-- You might want to add an EPFL favicon here -->
-    <link rel="icon" type="image/png" sizes="32x32" href="media/favicon-32.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="media/favicon-76.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="media/favicon-96.png">
-    <!-- Apple touch icon (for iOS home screen) -->
-    <link rel="apple-touch-icon" sizes="180x180" href="media/favicon-152.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="media/favicon-180.png">
-    <link rel="icon" href="media/favicon.ico" sizes="any" type="image/x-icon">
-    <link rel="manifest" href="media/site.webmanifest">
+    <title>Archie - Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background-color: #f4f4f9;
+        }
+        header {
+            background-color: #007bff;
+            color: #fff;
+            padding: 10px 20px;
+            text-align: center;
+        }
+        main {
+            padding: 20px;
+        }
+        .card {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .card h2 {
+            margin-top: 0;
+        }
+    </style>
 </head>
 <body>
-
-    <header class="epfl-header">
-        <div class="container">
-            <h1>
-                <!-- Add the image here -->
-                <img src="media/epfl-logo.svg" alt="EPFL Logo" class="header-logo">
-                <!-- Keep the rest of the title text -->
-                Archie AI
-            </h1>    
-            <!-- You could add the EPFL logo here if desired -->
-            <!-- <img src="path/to/epfl-logo.svg" alt="EPFL Logo" class="logo"> -->
-        </div>
+    <button
+        onclick="logout()"
+        style="
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 10px 20px;
+            background-color: #ff4d4d;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        "
+    >
+        Logout
+    </button>
+    <header>
+        <h1>Welcome to Archie</h1>
     </header>
-
-    <main class="container">
-        <section class="query-section">
-            <h2>With Archie, query and manage EPFL's Enterprise Architecture repository using AI.</h2>
-            <form id="query-form">
-                <div class="form-group">
-                    <label for="query-input">Your Query:</label>
-                    <input type="text" id="query-input" name="query" placeholder="e.g., 'List all VPO SI open source applications'" required>
-                </div>
-                <button type="submit" id="submit-button">Submit Query</button>
-            </form>
-        </section>
-
-        <section class="results-section">
-            <h2>Results</h2>
-            <div id="loading-indicator" style="display: none;">
-                <p>Loading results...</p>
-                <!-- Optional: Add a spinner animation here -->
-            </div>
-            <div id="error-message" class="error" style="display: none;"></div>
-            <pre id="results-area">
-Results will appear here.
-            </pre>
-        </section>
-    </main>
-
-    <footer class="epfl-footer">
-        <div class="container">
-            <p>&copy; Archie, Your Enterprise Architecture Assistant</p>
+    <main>
+        <div class="card">
+            <h2>Query the Architecture Repository</h2>
+            <p>Use the interface to query and update the EPFL ADOIT architecture repository.</p>
         </div>
-    </footer>
-
-    <script src="script.js"></script>
+        <div class="card">
+            <h2>Integration with OpenAI</h2>
+            <p>Leverage AI to assist in filling and querying the architecture repository.</p>
+        </div>
+    </main>
+    <script>
+        function logout() {
+            fetch("/api/logout", { method: "POST" })
+                .then(() => {
+                    window.location.href = "login.html";
+                })
+                .catch((err) => console.error("Logout failed:", err));
+        }
+    </script>
 </body>
 </html>
