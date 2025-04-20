@@ -1,5 +1,5 @@
-# .github/workflows/deploy_archie_fullstack.yml
-name: Deploy Archie Full Stack
+# .github/workflows/deploy_archie_fullstack.yaml
+name: Deploy Archie Full Stack (with Resource Creation)
 
 # --- Workflow Triggers ---
 on:
@@ -11,32 +11,98 @@ on:
   workflow_dispatch: # Allow manual triggering from GitHub UI
 
 # --- Permissions ---
-# Required for OIDC connection (backend) and reading repo contents
 permissions:
-  id-token: write
-  contents: read
+  id-token: write # Required for Azure OIDC Login
+  contents: read  # Required for actions/checkout
+
+# --- Global Environment Variables ---  
+
+
 
 # --- Jobs ---
 jobs:
-  # --- Backend Deployment Job ---
+  # --- Backend Infrastructure and Deployment Job ---
   build_and_deploy_backend:
-    name: Deploy Backend Azure Functions
+    name: Provision & Deploy Backend (Functions) - ${{ github.ref_name }}
     runs-on: ubuntu-latest
 
-    # Link to GitHub Environment for secrets (OIDC) and protection rules
     environment:
       name: ${{ (github.ref == 'refs/heads/dev' && 'archie_sec_dev') || (github.ref == 'refs/heads/qa' && 'archie_sec_qa') || (github.ref == 'refs/heads/main' && 'archie_sec_main') }}
-      url: ${{ steps.deploy_function_app.outputs.webapp-url }} # Function App URL
-
-    env:
-      AZURE_FUNCTIONAPP_NAME: ${{ (github.ref == 'refs/heads/dev' && 'archie-func-dev') || (github.ref == 'refs/heads/qa' && 'archie-func-qa') || (github.ref == 'refs/heads/main' && 'archie-func-main') }}
-      PYTHON_VERSION: '3.10'
-      # Assuming backend code (Function App) is at the repo root
-      AZURE_FUNCTIONAPP_PACKAGE_PATH: '.'
+      # URL output is complex for Function Apps created via CLI, manually configure if needed.
 
     steps:
+      - name: Set Global Environment Variables
+        run: |
+          echo "AZURE_LOCATION='Switzerland North'" >> $GITHUB_ENV
+          echo "ENV_SUFFIX=${{ github.ref == 'refs/heads/dev' && 'dev' || github.ref == 'refs/heads/qa' && 'qa' || github.ref == 'refs/heads/main' && 'main' }}" >> $GITHUB_ENV
+          echo "AZURE_RESOURCE_GROUP_NAME=rg-archie-${{ env.ENV_SUFFIX }}" >> $GITHUB_ENV
+          echo "AZURE_FUNCTIONAPP_NAME=archie-func-${{ env.ENV_SUFFIX }}" >> $GITHUB_ENV
+          echo "AZURE_STORAGE_ACCOUNT_NAME=starchie${{ env.ENV_SUFFIX }}${{ github.run_id }}" >> $GITHUB_ENV
+          echo "AZURE_FUNCTIONAPP_PLAN_NAME=plan-archie-${{ env.ENV_SUFFIX }}" >> $GITHUB_ENV
+          echo "PYTHON_VERSION=3.11" >> $GITHUB_ENV
+          echo "AZURE_FUNCTIONAPP_PACKAGE_PATH=backend/ArchieMCPFunctionApp" >> $GITHUB_ENV
+
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: 'Azure Login using OIDC'
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Create/Update Azure Resource Group
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            echo "Ensuring resource group ${{ env.AZURE_RESOURCE_GROUP_NAME }} exists in ${{ env.AZURE_LOCATION }}..."
+            az group create --name "${{ env.AZURE_RESOURCE_GROUP_NAME }}" --location "${{ env.AZURE_LOCATION }}" --output none
+
+      - name: Create/Update Azure Storage Account
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            echo "Ensuring storage account ${{ env.AZURE_STORAGE_ACCOUNT_NAME }} exists..."
+            az storage account create \
+              --name "${{ env.AZURE_STORAGE_ACCOUNT_NAME }}" \
+              --resource-group "${{ env.AZURE_RESOURCE_GROUP_NAME }}" \
+              --location "${{ env.AZURE_LOCATION }}" \
+              --sku Standard_LRS \
+              --kind StorageV2 \
+              --allow-blob-public-access false \
+              --output none
+
+      - name: Create/Update Azure Function App Plan (Consumption)
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            echo "Ensuring App Service plan ${{ env.AZURE_FUNCTIONAPP_PLAN_NAME }} exists..."
+            az functionapp plan create \
+              --name "${{ env.AZURE_FUNCTIONAPP_PLAN_NAME }}" \
+              --resource-group "${{ env.AZURE_RESOURCE_GROUP_NAME }}" \
+              --location "${{ env.AZURE_LOCATION }}" \
+              --sku Y1 \
+              --is-linux true \
+              --output none
+
+      - name: Create/Update Azure Function App
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            echo "Ensuring Function App ${{ env.AZURE_FUNCTIONAPP_NAME }} exists..."
+            az functionapp create \
+              --name "${{ env.AZURE_FUNCTIONAPP_NAME }}" \
+              --resource-group "${{ env.AZURE_RESOURCE_GROUP_NAME }}" \
+              --storage-account "${{ env.AZURE_STORAGE_ACCOUNT_NAME }}" \
+              --plan "${{ env.AZURE_FUNCTIONAPP_PLAN_NAME }}" \
+              --runtime python \
+              --runtime-version "${{ env.PYTHON_VERSION }}" \
+              --functions-version 4 \
+              --os-type Linux \
+              --output none
+            # Optional: Configure CORS, settings etc. here if needed
+            # az functionapp cors add --name "${{ env.AZURE_FUNCTIONAPP_NAME }}" --resource-group "${{ env.AZURE_RESOURCE_GROUP_NAME }}" --allowed-origins '*' # Example CORS
 
       - name: Setup Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
@@ -46,86 +112,128 @@ jobs:
       - name: Install Python dependencies
         shell: bash
         run: |
+          echo "Installing dependencies from ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/requirements.txt"
           python -m pip install --upgrade pip
-          pip install -r ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/requirements.txt --target="${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/.python_packages/lib/site-packages"
+          # Correct target path for Azure Functions deployment structure
+          pip install -r "${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/requirements.txt" --target="${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/.python_packages/lib/python${{ env.PYTHON_VERSION }}/site-packages"
 
-      - name: 'Azure Login using OIDC'
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}       # From GitHub Environment secrets
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}       # From GitHub Environment secrets
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }} # From GitHub Environment secrets
-
-      - name: 'Deploy to Azure Function App'
+      - name: 'Deploy Code to Azure Function App'
         id: deploy_function_app
         uses: Azure/functions-action@v1
         with:
           app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
           package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+          # No need to specify resource group here, app-name is unique identifier for this action
 
       - name: Azure Logout
         run: az logout
         if: always()
 
-  # --- Frontend Deployment Job ---
+  # --- Frontend Infrastructure and Deployment Job ---
   build_and_deploy_frontend:
-    name: Deploy Frontend Static Web App
+    name: Provision & Deploy Frontend (SWA) - ${{ github.ref_name }}
     runs-on: ubuntu-latest
-    # This job can run in parallel with the backend job unless
-    # the frontend build needs outputs from the backend deployment.
-    needs: build_and_deploy_backend # Uncomment if required
+    needs: build_and_deploy_backend # Ensure RG and backend infra exist first
 
-    # Link to GitHub Environment for SWA deployment token secret
     environment:
       name: ${{ (github.ref == 'refs/heads/dev' && 'archie_sec_dev') || (github.ref == 'refs/heads/qa' && 'archie_sec_qa') || (github.ref == 'refs/heads/main' && 'archie_sec_main') }}
-      # URL for the Static Web App (this isn't automatically output by the deploy action)
-      # You might need to manually configure this in the GitHub Environment settings if desired.
-
-    env:
-      NODE_VERSION: '18' # Or the Node.js version your project requires
-      # --- IMPORTANT: Adjust these paths based on your repository structure ---
-      FRONTEND_APP_PATH: 'frontend'  # Path to the directory containing frontend source code (where package.json is)
-      FRONTEND_OUTPUT_PATH: 'dist'   # Name of the directory created by 'npm run build' INSIDE FRONTEND_APP_PATH
+      # SWA URL can be retrieved via CLI if needed, but often manually set in Env settings
 
     steps:
+      - name: Set Global Environment Variables
+        run: |
+          echo "AZURE_LOCATION='Switzerland North'" >> $GITHUB_ENV
+          echo "ENV_SUFFIX=${{ github.ref == 'refs/heads/dev' && 'dev' || github.ref == 'refs/heads/qa' && 'qa' || github.ref == 'refs/heads/main' && 'main' }}" >> $GITHUB_ENV
+          echo "AZURE_RESOURCE_GROUP_NAME=rg-archie-${{ env.ENV_SUFFIX }}" >> $GITHUB_ENV
+          echo "AZURE_STATIC_WEB_APP_NAME=archie-swa-${{ env.ENV_SUFFIX }}" >> $GITHUB_ENV
+          echo "NODE_VERSION=18" >> $GITHUB_ENV
+          echo "FRONTEND_APP_PATH=frontend/front-end" >> $GITHUB_ENV
+          echo "FRONTEND_OUTPUT_PATH=dist" >> $GITHUB_ENV
+
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: 'Azure Login using OIDC'
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # Resource Group creation is technically redundant due to 'needs', but harmless and good practice
+      - name: Ensure Azure Resource Group Exists
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            echo "Ensuring resource group ${{ env.AZURE_RESOURCE_GROUP_NAME }} exists in ${{ env.AZURE_LOCATION }}..."
+            az group create --name "${{ env.AZURE_RESOURCE_GROUP_NAME }}" --location "${{ env.AZURE_LOCATION }}" --output none
+
+      - name: Create/Update Azure Static Web App Resource
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            echo "Ensuring Static Web App resource ${{ env.AZURE_STATIC_WEB_APP_NAME }} exists..."
+            # Check if SWA exists
+            swa_exists=$(az staticwebapp show --name "${{ env.AZURE_STATIC_WEB_APP_NAME }}" --resource-group "${{ env.AZURE_RESOURCE_GROUP_NAME }}" --query name -o tsv 2>/dev/null)
+            if [[ -z "$swa_exists" ]]; then
+              echo "Static Web App not found, creating..."
+              az staticwebapp create \
+                --name "${{ env.AZURE_STATIC_WEB_APP_NAME }}" \
+                --resource-group "${{ env.AZURE_RESOURCE_GROUP_NAME }}" \
+                --location "${{ env.AZURE_LOCATION }}" \
+                --source /dev/null --branch main # Dummy source/branch needed for creation, we upload manually
+                --output none
+              echo "Static Web App created."
+            else
+              echo "Static Web App already exists."
+            fi
+
+      - name: Get Static Web App Deployment Token
+        id: swa_token
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            echo "Retrieving deployment token for ${{ env.AZURE_STATIC_WEB_APP_NAME }}..."
+            token=$(az staticwebapp secrets list --name "${{ env.AZURE_STATIC_WEB_APP_NAME }}" --resource-group "${{ env.AZURE_RESOURCE_GROUP_NAME }}" --query "properties.apiKey" -o tsv)
+            if [[ -z "$token" ]]; then
+              echo "::error::Could not retrieve deployment token for Static Web App."
+              exit 1
+            fi
+            # Mask the token in logs and make it available as an output
+            echo "::add-mask::$token"
+            echo "deployment_token=$token" >> $GITHUB_OUTPUT
 
       - name: Setup Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          # Optional: Enable caching for faster builds
-          # cache: 'npm'
-          # cache-dependency-path: ${{ env.FRONTEND_APP_PATH }}/package-lock.json # Adjust path if needed
+          cache: 'npm'
+          cache-dependency-path: ${{ env.FRONTEND_APP_PATH }}/package-lock.json
 
       - name: Install Frontend Dependencies
-        # Ensure this runs in the correct directory
         working-directory: ${{ env.FRONTEND_APP_PATH }}
-        run: npm ci # Uses package-lock.json for consistent installs, faster than 'npm install'
+        run: npm ci
 
       - name: Build Frontend Application
-        # Ensure this runs in the correct directory and uses your build script
         working-directory: ${{ env.FRONTEND_APP_PATH }}
-        run: npm run build # Assumes 'build' script exists in frontend/package.json
+        run: npm run build
 
-      - name: 'Deploy to Azure Static Web App'
+      - name: 'Deploy Code to Azure Static Web App'
         id: deploy_static_web_app
         uses: Azure/static-web-apps-deploy@v1
         with:
-          # --- Required Tokens ---
-          # Fetches the correct deployment token from the GitHub Environment secrets
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
-          repo_token: ${{ secrets.GITHUB_TOKEN }} # Required for the action to integrate with GitHub
+          # --- Use the token retrieved dynamically in the previous step ---
+          azure_static_web_apps_api_token: ${{ steps.swa_token.outputs.deployment_token }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
 
           # --- Configuration ---
-          # IMPORTANT: These paths are relative to the REPOSITORY ROOT
-          app_location: ${{ env.FRONTEND_APP_PATH }} # e.g., 'frontend'
-          output_location: ${{ env.FRONTEND_OUTPUT_PATH }} # e.g., 'dist' - The *build output* folder name. IMPORTANT: Do NOT include app_location here again.
-          # api_location: "" # Leave empty or remove - we are deploying the API separately via Azure Functions job
+          app_location: ${{ env.FRONTEND_APP_PATH }} # Path to source code relative to root
+          # Output location is relative to app_location for the build, but relative to root for the deploy action *when specified like this*
+          # It expects the final build artifact path relative to the root.
+          output_location: "${{ env.FRONTEND_APP_PATH }}/${{ env.FRONTEND_OUTPUT_PATH }}" # e.g., frontend/front-end/dist
+          # api_location: "" # Correct - API deployed separately
 
-          # --- Optional Flags ---
-          # skip_app_build: true # Uncomment ONLY if you handle the build entirely outside this action (we are building above)
-          # skip_api_build: true # Recommended if API is deployed separately
-          # verbose: true # Add for more detailed logs during deployment if needed
+      - name: Azure Logout
+        run: az logout
+        if: always()
