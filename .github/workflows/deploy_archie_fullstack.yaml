@@ -38,7 +38,6 @@ jobs:
           echo "AZURE_RESOURCE_GROUP_NAME=rg-archie-${{ github.ref_name == 'dev' && 'dev' || github.ref_name == 'qa' && 'qa' || github.ref_name == 'main' && 'main' }}" >> $GITHUB_ENV
           echo "AZURE_STORAGE_ACCOUNT_NAME=saarchie${{ github.ref_name == 'dev' && 'dev' || github.ref_name == 'qa' && 'qa' || github.ref_name == 'main' && 'main' }}" >> $GITHUB_ENV
           echo "AZURE_FUNCTIONAPP_NAME=archie-func-${{ env.ENV_SUFFIX }}" >> $GITHUB_ENV
-          echo "AZURE_FUNCTIONAPP_PLAN_NAME=plan-archie-${{ env.ENV_SUFFIX }}" >> $GITHUB_ENV
           echo "PYTHON_VERSION=3.11" >> $GITHUB_ENV
           echo "AZURE_FUNCTIONAPP_PACKAGE_PATH=backend/ArchieMCPFunctionApp" >> $GITHUB_ENV
 
@@ -73,29 +72,16 @@ jobs:
               --allow-blob-public-access false \
               --output none
 
-      - name: Create/Update Azure Function App Plan (Consumption)
-        uses: azure/CLI@v2
-        with:
-          inlineScript: |
-            echo "Ensuring App Service plan ${{ env.AZURE_FUNCTIONAPP_PLAN_NAME }} exists..."
-            az functionapp plan create \
-              --name "${{ env.AZURE_FUNCTIONAPP_PLAN_NAME }}" \
-              --resource-group "${{ env.AZURE_RESOURCE_GROUP_NAME }}" \
-              --location "${{ env.AZURE_LOCATION }}" \
-              --sku Y1 \
-              --is-linux true \
-              --output none
-
       - name: Create/Update Azure Function App
         uses: azure/CLI@v2
         with:
           inlineScript: |
-            echo "Ensuring Function App ${{ env.AZURE_FUNCTIONAPP_NAME }} exists..."
+            echo "Ensuring Function App ${{ env.AZURE_FUNCTIONAPP_NAME }} exists with Consumption plan..."
             az functionapp create \
               --name "${{ env.AZURE_FUNCTIONAPP_NAME }}" \
               --resource-group "${{ env.AZURE_RESOURCE_GROUP_NAME }}" \
               --storage-account "${{ env.AZURE_STORAGE_ACCOUNT_NAME }}" \
-              --plan "${{ env.AZURE_FUNCTIONAPP_PLAN_NAME }}" \
+              --consumption-plan-location "${{ env.AZURE_LOCATION }}" \
               --runtime python \
               --runtime-version "${{ env.PYTHON_VERSION }}" \
               --functions-version 4 \
