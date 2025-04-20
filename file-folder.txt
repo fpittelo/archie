@@ -1,0 +1,58 @@
+Folder PATH listing for volume Google Drive
+Volume serial number is 1983-1116
+G:.
+|   LICENSE
+|   README.md
+|   CONTRIBUTING.MD
+|   .gitignore
+|   file-folder.txt
+|   
++---frontend
+|   \---front-end
+|       |   index.html
+|       |   style.css
+|       |   script.js
+|       |   login.html
+|       |   auth.js
+|       |   
+|       \---media
+|               epfl-logo.svg
+|               favicon-32.png
+|               favicon-76.png
+|               favicon-96.png
+|               favicon-152.png
+|               favicon-180.png
+|               favicon.ico
+|               site.webmanifest
+|               
++---.github
+|   \---workflows
+|           deploy_archie_fullstack.yaml
+|           destroy_archie_fullstack.yaml
+|           
+\---backend
+    +---ArchieMCPFunctionApp
+    |   |   host.json
+    |   |   local.settings.json
+    |   |   requirements.txt
+    |   |   .gitignore
+    |   |   proxies.json
+    |   |   
+    |   \---ArchieMCPEndpoint
+    |           __init__.py
+    |           function.json
+    |           sample.dat
+    |           
+    \---SharedCode
+        |   __init__.py
+        |   auth_utils.py
+        |   repository_client.py
+        |   openai_client.py
+        |   models.py
+        |   
+        \---agents
+                __init__.py
+                base_agent.py
+                editor_finder.py
+                query_agent.py
+                
