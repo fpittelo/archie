@@ -37,7 +37,7 @@ jobs:
           echo "ENV_SUFFIX=${{ github.ref_name == 'dev' && 'dev' || github.ref_name == 'qa' && 'qa' || github.ref_name == 'main' && 'main' }}" >> $GITHUB_ENV
           echo "AZURE_RESOURCE_GROUP_NAME=rg-archie-${{ github.ref_name == 'dev' && 'dev' || github.ref_name == 'qa' && 'qa' || github.ref_name == 'main' && 'main' }}" >> $GITHUB_ENV
           echo "AZURE_STORAGE_ACCOUNT_NAME=saarchie${{ github.ref_name == 'dev' && 'dev' || github.ref_name == 'qa' && 'qa' || github.ref_name == 'main' && 'main' }}" >> $GITHUB_ENV
-          echo "AZURE_FUNCTIONAPP_NAME=archie-func-${{ env.ENV_SUFFIX }}" >> $GITHUB_ENV
+          echo "AZURE_FUNCTIONAPP_NAME=archie-func-${{ github.ref_name == 'dev' && 'dev' || github.ref_name == 'qa' && 'qa' || github.ref_name == 'main' && 'main' }}" >> $GITHUB_ENV
           echo "PYTHON_VERSION=3.11" >> $GITHUB_ENV
           echo "AZURE_FUNCTIONAPP_PACKAGE_PATH=backend/ArchieMCPFunctionApp" >> $GITHUB_ENV
 
