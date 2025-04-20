@@ -35,9 +35,9 @@ jobs:
         run: |
           echo "AZURE_LOCATION=Switzerland North" >> $GITHUB_ENV
           echo "ENV_SUFFIX=${{ github.ref_name == 'dev' && 'dev' || github.ref_name == 'qa' && 'qa' || github.ref_name == 'main' && 'main' }}" >> $GITHUB_ENV
-          echo "AZURE_RESOURCE_GROUP_NAME=rg-archie-${{ env.ENV_SUFFIX }}" >> $GITHUB_ENV
+          echo "AZURE_RESOURCE_GROUP_NAME=rg-archie-${{ github.ref_name == 'dev' && 'dev' || github.ref_name == 'qa' && 'qa' || github.ref_name == 'main' && 'main' }}" >> $GITHUB_ENV
+          echo "AZURE_STORAGE_ACCOUNT_NAME=sa-archie-${{ github.ref_name == 'dev' && 'dev' || github.ref_name == 'qa' && 'qa' || github.ref_name == 'main' && 'main' }}" >> $GITHUB_ENV
           echo "AZURE_FUNCTIONAPP_NAME=archie-func-${{ env.ENV_SUFFIX }}" >> $GITHUB_ENV
-          echo "AZURE_STORAGE_ACCOUNT_NAME=starchie${{ env.ENV_SUFFIX }}${{ github.run_id }}" >> $GITHUB_ENV
           echo "AZURE_FUNCTIONAPP_PLAN_NAME=plan-archie-${{ env.ENV_SUFFIX }}" >> $GITHUB_ENV
           echo "PYTHON_VERSION=3.11" >> $GITHUB_ENV
           echo "AZURE_FUNCTIONAPP_PACKAGE_PATH=backend/ArchieMCPFunctionApp" >> $GITHUB_ENV
