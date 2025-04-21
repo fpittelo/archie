@@ -45,11 +45,61 @@ body {
     opacity: 0.8; /* Slightly fade the logo on hover */
 }
 
+/* Header Title Styling */
+.header-title {
+    font-weight: bold;
+    font-size: 40px; /* Match the logo height */
+    line-height: 40px; /* Align vertically with the logo */
+    color: #000;
+}
+
 /* Optional Logo Styling (if you add one) */
 .epfl-header .logo {
     height: 10px;
     float: right;
     margin-top: 5px;     
+}
+
+/* Query Container Styling */
+.query-container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.query-container h1 {
+    font-size: 1rem; /* Match the font size of the response text */
+    font-weight: normal; /* Match the font weight */
+    color: #333; /* Match the color */
+    margin-bottom: 20px;
+}
+
+.query-container textarea {
+    width: 100%;
+    height: 100px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+    margin-bottom: 20px;
+}
+
+.query-container button {
+    background-color: #d52b1e; /* EPFL Red */
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+}
+
+.query-container button:hover {
+    background-color: #b2221a;
 }
 
 /* Main Content Area */
@@ -123,6 +173,18 @@ button[type="submit"]:hover {
     font-size: 0.9em;
     border-radius: 4px;
     color: #000; /* Ensure results text is black */
+}
+
+/* Response Container Styling */
+.response-container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background: #f7f7f7;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    font-size: 1rem;
+    color: #333;
 }
 
 /* Loading Indicator */
