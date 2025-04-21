@@ -36,15 +36,16 @@ jobs:
           echo "AZURE_LOCATION=Switzerland North" >> $GITHUB_ENV
           # Correctly derive ENV_SUFFIX based on the branch name
           if [[ "${GITHUB_REF}" == "refs/heads/dev" ]]; then
-            echo "ENV_SUFFIX=dev" >> $GITHUB_ENV
+            ENV_SUFFIX="dev"
           elif [[ "${GITHUB_REF}" == "refs/heads/qa" ]]; then
-            echo "ENV_SUFFIX=qa" >> $GITHUB_ENV
+            ENV_SUFFIX="qa"
           elif [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
-            echo "ENV_SUFFIX=main" >> $GITHUB_ENV
+            ENV_SUFFIX="main"
           else
             echo "::error::Unsupported branch name: ${GITHUB_REF}"
             exit 1
           fi
+          echo "ENV_SUFFIX=${ENV_SUFFIX}" >> $GITHUB_ENV
           echo "AZURE_RESOURCE_GROUP_NAME=rg-archie-${ENV_SUFFIX}" >> $GITHUB_ENV
           echo "AZURE_STORAGE_ACCOUNT_NAME=saarchie${ENV_SUFFIX}" >> $GITHUB_ENV
           echo "AZURE_FUNCTIONAPP_NAME=fnc-archie-${ENV_SUFFIX}" >> $GITHUB_ENV
@@ -185,15 +186,16 @@ jobs:
           echo "AZURE_LOCATION=Switzerland North" >> $GITHUB_ENV
           # Correctly derive ENV_SUFFIX based on the branch name
           if [[ "${GITHUB_REF}" == "refs/heads/dev" ]]; then
-            echo "ENV_SUFFIX=dev" >> $GITHUB_ENV
+            ENV_SUFFIX="dev"
           elif [[ "${GITHUB_REF}" == "refs/heads/qa" ]]; then
-            echo "ENV_SUFFIX=qa" >> $GITHUB_ENV
+            ENV_SUFFIX="qa"
           elif [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
-            echo "ENV_SUFFIX=main" >> $GITHUB_ENV
+            ENV_SUFFIX="main"
           else
             echo "::error::Unsupported branch name: ${GITHUB_REF}"
             exit 1
           fi
+          echo "ENV_SUFFIX=${ENV_SUFFIX}" >> $GITHUB_ENV
           echo "AZURE_RESOURCE_GROUP_NAME=rg-archie-${ENV_SUFFIX}" >> $GITHUB_ENV
           echo "AZURE_STATIC_WEB_APP_NAME=swa-archie-${ENV_SUFFIX}" >> $GITHUB_ENV
           echo "NODE_VERSION=18" >> $GITHUB_ENV
