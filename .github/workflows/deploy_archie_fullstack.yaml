@@ -15,10 +15,6 @@ permissions:
   id-token: write # Required for Azure OIDC Login
   contents: read  # Required for actions/checkout
 
-# --- Global Environment Variables ---  
-
-
-
 # --- Jobs ---
 jobs:
   # --- Backend Infrastructure and Deployment Job ---
@@ -26,33 +22,22 @@ jobs:
     name: Deploy Backend ${{ github.ref_name }}
     runs-on: ubuntu-latest
 
+    # --- Use GitHub Environment based on branch ---
+    # This loads variables and secrets defined in the corresponding GitHub Environment (dev, qa, main)
     environment:
       name: ${{ (github.ref == 'refs/heads/dev' && 'dev') || (github.ref == 'refs/heads/qa' && 'qa') || (github.ref == 'refs/heads/main' && 'main') }}
       # URL output is complex for Function Apps created via CLI, manually configure if needed.
 
+    # --- Job-specific Environment Variables (Non-Sensitive, Non-Environment-Specific) ---
+    env:
+      PYTHON_VERSION: 3.11
+      AZURE_FUNCTIONAPP_PACKAGE_PATH: backend/ArchieMCPFunctionApp
+      # Variables like AZURE_LOCATION, AZURE_RESOURCE_GROUP_NAME, AZURE_STORAGE_ACCOUNT_NAME,
+      # AZURE_FUNCTIONAPP_NAME, AZURE_APP_INSIGHT_NAME, LOG_ANALYTICS_WORKSPACE_NAME, LOG_ANALYTICS_SKU
+      # are now expected to be defined in the GitHub Environment variables for dev, qa, main.
+
     steps:
-      - name: Set Global Environment Variables
-        run: |
-          echo "AZURE_LOCATION=switzerlandnorth" >> $GITHUB_ENV
-          # Correctly derive ENV_SUFFIX based on the branch name
-          if [[ "${GITHUB_REF}" == "refs/heads/dev" ]]; then
-            ENV_SUFFIX="dev"
-          elif [[ "${GITHUB_REF}" == "refs/heads/qa" ]]; then
-            ENV_SUFFIX="qa"
-          elif [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
-            ENV_SUFFIX="main"
-          else
-            echo "::error::Unsupported branch name: ${GITHUB_REF}"
-            exit 1
-          fi
-          echo "ENV_SUFFIX=${ENV_SUFFIX}" >> $GITHUB_ENV
-          echo "AZURE_RESOURCE_GROUP_NAME=rg-archie-${ENV_SUFFIX}" >> $GITHUB_ENV
-          echo "AZURE_STORAGE_ACCOUNT_NAME=saarchie${ENV_SUFFIX}" >> $GITHUB_ENV
-          echo "AZURE_FUNCTIONAPP_NAME=fnc-archie-${ENV_SUFFIX}" >> $GITHUB_ENV
-          echo "AZURE_APP_INSIGHT_NAME=ins-archie-${ENV_SUFFIX}" >> $GITHUB_ENV
-          echo "AZURE_STATIC_WEB_APP_NAME=swa-archie-${ENV_SUFFIX}" >> $GITHUB_ENV
-          echo "PYTHON_VERSION=3.11" >> $GITHUB_ENV
-          echo "AZURE_FUNCTIONAPP_PACKAGE_PATH=backend/ArchieMCPFunctionApp" >> $GITHUB_ENV
+      # Removed the "Set Global Environment Variables" step
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -60,6 +45,7 @@ jobs:
       - name: 'Azure Login using OIDC'
         uses: azure/login@v2
         with:
+          # These secrets are now sourced from the active GitHub Environment (dev, qa, or main)
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
@@ -69,6 +55,7 @@ jobs:
         with:
           inlineScript: |
             echo "Ensuring resource group $AZURE_RESOURCE_GROUP_NAME exists in $AZURE_LOCATION..."
+            # Variables $AZURE_RESOURCE_GROUP_NAME and $AZURE_LOCATION are sourced from GitHub Environment
             az group create --name "$AZURE_RESOURCE_GROUP_NAME" --location "$AZURE_LOCATION" --output none
 
       - name: Create/Update Azure Storage Account
@@ -76,6 +63,7 @@ jobs:
         with:
           inlineScript: |
             echo "Ensuring storage account $AZURE_STORAGE_ACCOUNT_NAME exists..."
+            # Variables $AZURE_STORAGE_ACCOUNT_NAME, $AZURE_RESOURCE_GROUP_NAME, $AZURE_LOCATION sourced from GitHub Env
             az storage account create \
               --name "$AZURE_STORAGE_ACCOUNT_NAME" \
               --resource-group "$AZURE_RESOURCE_GROUP_NAME" \
@@ -90,13 +78,15 @@ jobs:
         with:
           inlineScript: |
             echo "Ensuring Function App $AZURE_FUNCTIONAPP_NAME exists with Consumption plan..."
+            # Variables $AZURE_FUNCTIONAPP_NAME, $AZURE_RESOURCE_GROUP_NAME, $AZURE_STORAGE_ACCOUNT_NAME, $AZURE_LOCATION sourced from GitHub Env
+            # Variable $PYTHON_VERSION sourced from job env block
             az functionapp create \
               --name "$AZURE_FUNCTIONAPP_NAME" \
               --resource-group "$AZURE_RESOURCE_GROUP_NAME" \
               --storage-account "$AZURE_STORAGE_ACCOUNT_NAME" \
               --consumption-plan-location "$AZURE_LOCATION" \
               --runtime python \
-              --runtime-version "3.11" \
+              --runtime-version "${{ env.PYTHON_VERSION }}" \
               --functions-version 4 \
               --os-type Linux \
               --output none
@@ -106,6 +96,7 @@ jobs:
         with:
           inlineScript: |
             echo "Ensuring Application Insights $AZURE_APP_INSIGHT_NAME exists..."
+            # Variables $AZURE_APP_INSIGHT_NAME, $AZURE_LOCATION, $AZURE_RESOURCE_GROUP_NAME sourced from GitHub Env
             az monitor app-insights component create \
               --app "$AZURE_APP_INSIGHT_NAME" \
               --location "$AZURE_LOCATION" \
@@ -117,12 +108,13 @@ jobs:
         uses: azure/CLI@v2
         with:
           inlineScript: |
-            echo "Ensuring Log Analytics Workspace log-archie-${{ env.ENV_SUFFIX }} exists..."
+            echo "Ensuring Log Analytics Workspace $LOG_ANALYTICS_WORKSPACE_NAME exists..."
+            # Variables $LOG_ANALYTICS_WORKSPACE_NAME, $AZURE_RESOURCE_GROUP_NAME, $AZURE_LOCATION, $LOG_ANALYTICS_SKU sourced from GitHub Env
             az monitor log-analytics workspace create \
-              --workspace-name "log-archie-${{ env.ENV_SUFFIX }}" \
+              --workspace-name "$LOG_ANALYTICS_WORKSPACE_NAME" \
               --resource-group "$AZURE_RESOURCE_GROUP_NAME" \
               --location "$AZURE_LOCATION" \
-              --sku PerGB2018 \
+              --sku "$LOG_ANALYTICS_SKU" \
               --output none
 
       - name: Setup Python ${{ env.PYTHON_VERSION }}
@@ -156,6 +148,7 @@ jobs:
         id: deploy_function_app
         uses: Azure/functions-action@v1
         with:
+          # AZURE_FUNCTIONAPP_NAME sourced from GitHub Environment
           app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
           package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
 
@@ -163,8 +156,9 @@ jobs:
         uses: azure/CLI@v2
         with:
           inlineScript: |
-            echo "Restarting Azure Function App ${{ env.AZURE_FUNCTIONAPP_NAME }}..."
-            az functionapp restart --name "${{ env.AZURE_FUNCTIONAPP_NAME }}" --resource-group "${{ env.AZURE_RESOURCE_GROUP_NAME }}"
+            echo "Restarting Azure Function App $AZURE_FUNCTIONAPP_NAME..."
+            # Variables $AZURE_FUNCTIONAPP_NAME, $AZURE_RESOURCE_GROUP_NAME sourced from GitHub Env
+            az functionapp restart --name "$AZURE_FUNCTIONAPP_NAME" --resource-group "$AZURE_RESOURCE_GROUP_NAME"
 
       - name: Azure Logout
         run: az logout
@@ -176,31 +170,21 @@ jobs:
     runs-on: ubuntu-latest
     needs: build_and_deploy_backend # Ensure RG and backend infra exist first
 
+    # --- Use GitHub Environment based on branch ---
     environment:
       name: ${{ (github.ref == 'refs/heads/dev' && 'dev') || (github.ref == 'refs/heads/qa' && 'qa') || (github.ref == 'refs/heads/main' && 'main') }}
       # SWA URL can be retrieved via CLI if needed, but often manually set in Env settings
 
+    # --- Job-specific Environment Variables (Non-Sensitive, Non-Environment-Specific) ---
+    env:
+      NODE_VERSION: 18
+      FRONTEND_APP_PATH: frontend/front-end
+      FRONTEND_OUTPUT_PATH: dist
+      # Variables like AZURE_LOCATION, AZURE_RESOURCE_GROUP_NAME, AZURE_STATIC_WEB_APP_NAME
+      # are now expected to be defined in the GitHub Environment variables for dev, qa, main.
+
     steps:
-      - name: Set Global Environment Variables
-        run: |
-          echo "AZURE_LOCATION=switzerlandnorth" >> $GITHUB_ENV
-          # Correctly derive ENV_SUFFIX based on the branch name
-          if [[ "${GITHUB_REF}" == "refs/heads/dev" ]]; then
-            ENV_SUFFIX="dev"
-          elif [[ "${GITHUB_REF}" == "refs/heads/qa" ]]; then
-            ENV_SUFFIX="qa"
-          elif [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
-            ENV_SUFFIX="main"
-          else
-            echo "::error::Unsupported branch name: ${GITHUB_REF}"
-            exit 1
-          fi
-          echo "ENV_SUFFIX=${ENV_SUFFIX}" >> $GITHUB_ENV
-          echo "AZURE_RESOURCE_GROUP_NAME=rg-archie-${ENV_SUFFIX}" >> $GITHUB_ENV
-          echo "AZURE_STATIC_WEB_APP_NAME=swa-archie-${ENV_SUFFIX}" >> $GITHUB_ENV
-          echo "NODE_VERSION=18" >> $GITHUB_ENV
-          echo "FRONTEND_APP_PATH=frontend/front-end" >> $GITHUB_ENV
-          echo "FRONTEND_OUTPUT_PATH=dist" >> $GITHUB_ENV
+      # Removed the "Set Global Environment Variables" step
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -208,6 +192,7 @@ jobs:
       - name: 'Azure Login using OIDC'
         uses: azure/login@v2
         with:
+          # These secrets are now sourced from the active GitHub Environment (dev, qa, or main)
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
@@ -217,21 +202,23 @@ jobs:
         uses: azure/CLI@v2
         with:
           inlineScript: |
-            echo "Ensuring resource group ${{ env.AZURE_RESOURCE_GROUP_NAME }} exists in ${{ env.AZURE_LOCATION }}..."
-            az group create --name "${{ env.AZURE_RESOURCE_GROUP_NAME }}" --location "${{ env.AZURE_LOCATION }}" --output none
+            echo "Ensuring resource group $AZURE_RESOURCE_GROUP_NAME exists in $AZURE_LOCATION..."
+            # Variables $AZURE_RESOURCE_GROUP_NAME and $AZURE_LOCATION are sourced from GitHub Environment
+            az group create --name "$AZURE_RESOURCE_GROUP_NAME" --location "$AZURE_LOCATION" --output none
 
       - name: Create/Update Azure Static Web App Resource
         uses: azure/CLI@v2
         with:
           inlineScript: |
-            echo "Ensuring Static Web App resource ${{ env.AZURE_STATIC_WEB_APP_NAME }} exists..."
-            swa_exists=$(az staticwebapp show --name "${{ env.AZURE_STATIC_WEB_APP_NAME }}" --resource-group "${{ env.AZURE_RESOURCE_GROUP_NAME }}" --query name -o tsv 2>/dev/null)
+            echo "Ensuring Static Web App resource $AZURE_STATIC_WEB_APP_NAME exists..."
+            # Variables $AZURE_STATIC_WEB_APP_NAME, $AZURE_RESOURCE_GROUP_NAME, $AZURE_LOCATION sourced from GitHub Env
+            swa_exists=$(az staticwebapp show --name "$AZURE_STATIC_WEB_APP_NAME" --resource-group "$AZURE_RESOURCE_GROUP_NAME" --query name -o tsv 2>/dev/null)
             if [[ -z "$swa_exists" ]]; then
               echo "Static Web App not found, creating..."
               az staticwebapp create \
-                --name "${{ env.AZURE_STATIC_WEB_APP_NAME }}" \
-                --resource-group "${{ env.AZURE_RESOURCE_GROUP_NAME }}" \
-                --location "${{ env.AZURE_LOCATION }}" \
+                --name "$AZURE_STATIC_WEB_APP_NAME" \
+                --resource-group "$AZURE_RESOURCE_GROUP_NAME" \
+                --location "$AZURE_LOCATION" \
                 --source /dev/null --branch "${{ github.ref_name }}" \
                 --output none
               echo "Static Web App created."
@@ -244,8 +231,9 @@ jobs:
         uses: azure/CLI@v2
         with:
           inlineScript: |
-            echo "Retrieving deployment token for ${{ env.AZURE_STATIC_WEB_APP_NAME }}..."
-            token=$(az staticwebapp secrets list --name "${{ env.AZURE_STATIC_WEB_APP_NAME }}" --resource-group "${{ env.AZURE_RESOURCE_GROUP_NAME }}" --query "properties.apiKey" -o tsv)
+            echo "Retrieving deployment token for $AZURE_STATIC_WEB_APP_NAME..."
+            # Variables $AZURE_STATIC_WEB_APP_NAME, $AZURE_RESOURCE_GROUP_NAME sourced from GitHub Env
+            token=$(az staticwebapp secrets list --name "$AZURE_STATIC_WEB_APP_NAME" --resource-group "$AZURE_RESOURCE_GROUP_NAME" --query "properties.apiKey" -o tsv)
             if [[ -z "$token" ]]; then
               echo "::error::Could not retrieve deployment token for Static Web App."
               exit 1
@@ -275,13 +263,12 @@ jobs:
         with:
           # --- Use the token retrieved dynamically in the previous step ---
           azure_static_web_apps_api_token: ${{ steps.swa_token.outputs.deployment_token }}
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }} # Standard GitHub token
           action: "upload"
 
           # --- Configuration ---
           app_location: ${{ env.FRONTEND_APP_PATH }} # Path to source code relative to root
-          # Output location is relative to app_location for the build, but relative to root for the deploy action *when specified like this*
-          # It expects the final build artifact path relative to the root.
+          # Output location relative to the root.
           output_location: "${{ env.FRONTEND_APP_PATH }}/${{ env.FRONTEND_OUTPUT_PATH }}" # e.g., frontend/front-end/dist
           # api_location: "" # Correct - API deployed separately
 
