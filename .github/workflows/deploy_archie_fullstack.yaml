@@ -184,7 +184,7 @@ jobs:
                 --name "${{ env.AZURE_STATIC_WEB_APP_NAME }}" \
                 --resource-group "${{ env.AZURE_RESOURCE_GROUP_NAME }}" \
                 --location "${{ env.AZURE_LOCATION }}" \
-                --source /dev/null --branch main \
+                --source /dev/null --branch "${{ github.ref_name }}" \
                 --output none
               echo "Static Web App created."
             else

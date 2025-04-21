@@ -19,22 +19,44 @@
       margin: 0;
       padding: 0;
     }
-    .header {
+    .toolbar {
       display: flex;
+      justify-content: space-between;
       align-items: center;
       padding: 10px 20px;
       background-color: #fff;
       border-bottom: 1px solid #ddd;
     }
-    .header img {
+    .toolbar .logo-container {
+      display: flex;
+      align-items: center;
+    }
+    .toolbar .logo-container img {
       height: 40px;
       margin-right: 10px;
     }
-    .header .title {
+    .toolbar .logo-container .app-name {
       font-weight: bold;
-      font-size: 40px; /* Match the logo height */
-      line-height: 40px; /* Align vertically with the logo */
+      font-size: 32px; /* Match index.html */
       color: #000;
+    }
+    .toolbar .language-switcher {
+      display: flex;
+      align-items: center;
+      margin-left: auto; /* Push the language-switcher to the right */
+    }
+    .toolbar .language-switcher span {
+      cursor: pointer;
+      margin: 0 5px;
+    }
+    .toolbar .language-switcher .active-lang {
+      font-weight: bold;
+      color: #d52b1e; /* EPFL Red */
+    }
+    .gray-bar {
+      background-color: #ddd; /* Match the white area */
+      height: 2px; /* Thin bar */
+      margin-top: 10px; /* Add spacing below the toolbar content */
     }
     .login-container {
       max-width: 400px;
@@ -43,10 +65,6 @@
       background: #fff;
       border-radius: 8px;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-    .login-container h1 {
-      color: #d52b1e; /* EPFL Red */
-      text-align: center;
     }
     .login-container button {
       background-color: #d52b1e; /* EPFL Red */
@@ -74,10 +92,18 @@
   </style>
 </head>
 <body>
-  <div class="header">
-    <img src="media/epfl-logo.svg" alt="EPFL Logo">
-    <span class="title">Archie</span>
-  </div>
+  <header class="toolbar">
+    <div class="logo-container">
+      <img src="media/logo.png" alt="EPFL Logo">
+      <div class="app-name">Archie</div>
+    </div>
+    <div class="language-switcher">
+      <span class="active-lang">FR</span>
+      <span>|</span>
+      <span>EN</span>
+    </div>
+    <div class="gray-bar"></div>
+  </header>
   <div class="login-container">
     <form id="login-form">
       <button type="button" onclick="authenticate()">Login With Your EPFL Account</button>
