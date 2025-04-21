@@ -96,7 +96,7 @@ jobs:
               --storage-account "$AZURE_STORAGE_ACCOUNT_NAME" \
               --consumption-plan-location "$AZURE_LOCATION" \
               --runtime python \
-              --runtime-version "$PYTHON_VERSION" \
+              --runtime-version "3.11" \
               --functions-version 4 \
               --os-type Linux \
               --output none
