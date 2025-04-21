@@ -50,20 +50,37 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Validate Environment Variables
+        env:
+          AZURE_RESOURCE_GROUP_NAME: ${{ vars.AZURE_RESOURCE_GROUP_NAME }}
+          AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
+        run: |
+          if [[ -z "$AZURE_RESOURCE_GROUP_NAME" || -z "$AZURE_LOCATION" ]]; then
+            echo "::error::AZURE_RESOURCE_GROUP_NAME or AZURE_LOCATION is not set. Please check your GitHub Environment variables."
+            exit 1
+          fi
+          echo "AZURE_RESOURCE_GROUP_NAME=$AZURE_RESOURCE_GROUP_NAME"
+          echo "AZURE_LOCATION=$AZURE_LOCATION"
+
       - name: Create/Update Azure Resource Group
         uses: azure/CLI@v2
+        env:
+          AZURE_RESOURCE_GROUP_NAME: ${{ vars.AZURE_RESOURCE_GROUP_NAME }}
+          AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
         with:
           inlineScript: |
             echo "Ensuring resource group $AZURE_RESOURCE_GROUP_NAME exists in $AZURE_LOCATION..."
-            # Variables $AZURE_RESOURCE_GROUP_NAME and $AZURE_LOCATION are sourced from GitHub Environment
             az group create --name "$AZURE_RESOURCE_GROUP_NAME" --location "$AZURE_LOCATION" --output none
 
       - name: Create/Update Azure Storage Account
         uses: azure/CLI@v2
+        env:
+          AZURE_STORAGE_ACCOUNT_NAME: ${{ vars.AZURE_STORAGE_ACCOUNT_NAME }}
+          AZURE_RESOURCE_GROUP_NAME: ${{ vars.AZURE_RESOURCE_GROUP_NAME }}
+          AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
         with:
           inlineScript: |
             echo "Ensuring storage account $AZURE_STORAGE_ACCOUNT_NAME exists..."
-            # Variables $AZURE_STORAGE_ACCOUNT_NAME, $AZURE_RESOURCE_GROUP_NAME, $AZURE_LOCATION sourced from GitHub Env
             az storage account create \
               --name "$AZURE_STORAGE_ACCOUNT_NAME" \
               --resource-group "$AZURE_RESOURCE_GROUP_NAME" \
