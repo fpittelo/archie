@@ -34,12 +34,22 @@ jobs:
       - name: Set Global Environment Variables
         run: |
           echo "AZURE_LOCATION=Switzerland North" >> $GITHUB_ENV
-          echo "ENV_SUFFIX=${{ github.ref_name == 'refs/heads/dev' && 'dev' || github.ref_name == 'refs/heads/qa' && 'qa' || github.ref_name == 'refs/heads/main' && 'main' }}" >> $GITHUB_ENV
-          echo "AZURE_RESOURCE_GROUP_NAME=rg-archie-${{ github.ref_name == 'refs/heads/dev' && 'dev' || github.ref_name == 'refs/heads/qa' && 'qa' || github.ref_name == 'refs/heads/main' && 'main' }}" >> $GITHUB_ENV
-          echo "AZURE_STORAGE_ACCOUNT_NAME=saarchie${{ github.ref_name == 'refs/heads/dev' && 'dev' || github.ref_name == 'refs/heads/qa' && 'qa' || github.ref_name == 'refs/heads/main' && 'main' }}" >> $GITHUB_ENV
-          echo "AZURE_FUNCTIONAPP_NAME=fnc-archie-${{ github.ref_name == 'refs/heads/dev' && 'dev' || github.ref_name == 'refs/heads/qa' && 'qa' || github.ref_name == 'refs/heads/main' && 'main' }}" >> $GITHUB_ENV
-          echo "AZURE_APP_INSIGHT_NAME=ins-archie-${{ github.ref_name == 'refs/heads/dev' && 'dev' || github.ref_name == 'refs/heads/qa' && 'qa' || github.ref_name == 'refs/heads/main' && 'main' }}" >> $GITHUB_ENV
-          echo "AZURE_STATIC_WEB_APP_NAME=swa-archie-${{ github.ref_name == 'refs/heads/dev' && 'dev' || github.ref_name == 'refs/heads/qa' && 'qa' || github.ref_name == 'refs/heads/main' && 'main' }}" >> $GITHUB_ENV
+          # Correctly derive ENV_SUFFIX based on the branch name
+          if [[ "${GITHUB_REF}" == "refs/heads/dev" ]]; then
+            echo "ENV_SUFFIX=dev" >> $GITHUB_ENV
+          elif [[ "${GITHUB_REF}" == "refs/heads/qa" ]]; then
+            echo "ENV_SUFFIX=qa" >> $GITHUB_ENV
+          elif [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
+            echo "ENV_SUFFIX=main" >> $GITHUB_ENV
+          else
+            echo "::error::Unsupported branch name: ${GITHUB_REF}"
+            exit 1
+          fi
+          echo "AZURE_RESOURCE_GROUP_NAME=rg-archie-${ENV_SUFFIX}" >> $GITHUB_ENV
+          echo "AZURE_STORAGE_ACCOUNT_NAME=saarchie${ENV_SUFFIX}" >> $GITHUB_ENV
+          echo "AZURE_FUNCTIONAPP_NAME=fnc-archie-${ENV_SUFFIX}" >> $GITHUB_ENV
+          echo "AZURE_APP_INSIGHT_NAME=ins-archie-${ENV_SUFFIX}" >> $GITHUB_ENV
+          echo "AZURE_STATIC_WEB_APP_NAME=swa-archie-${ENV_SUFFIX}" >> $GITHUB_ENV
           echo "PYTHON_VERSION=3.11" >> $GITHUB_ENV
           echo "AZURE_FUNCTIONAPP_PACKAGE_PATH=backend/ArchieMCPFunctionApp" >> $GITHUB_ENV
 
@@ -173,9 +183,19 @@ jobs:
       - name: Set Global Environment Variables
         run: |
           echo "AZURE_LOCATION=Switzerland North" >> $GITHUB_ENV
-          echo "ENV_SUFFIX=${{ github.ref == 'refs/heads/dev' && 'dev' || github.ref == 'refs/heads/qa' && 'qa' || github.ref == 'refs/heads/main' && 'main' }}" >> $GITHUB_ENV
-          echo "AZURE_RESOURCE_GROUP_NAME=rg-archie-${{ env.ENV_SUFFIX }}" >> $GITHUB_ENV
-          echo "AZURE_STATIC_WEB_APP_NAME=swa-archie-${{ env.ENV_SUFFIX }}" >> $GITHUB_ENV
+          # Correctly derive ENV_SUFFIX based on the branch name
+          if [[ "${GITHUB_REF}" == "refs/heads/dev" ]]; then
+            echo "ENV_SUFFIX=dev" >> $GITHUB_ENV
+          elif [[ "${GITHUB_REF}" == "refs/heads/qa" ]]; then
+            echo "ENV_SUFFIX=qa" >> $GITHUB_ENV
+          elif [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
+            echo "ENV_SUFFIX=main" >> $GITHUB_ENV
+          else
+            echo "::error::Unsupported branch name: ${GITHUB_REF}"
+            exit 1
+          fi
+          echo "AZURE_RESOURCE_GROUP_NAME=rg-archie-${ENV_SUFFIX}" >> $GITHUB_ENV
+          echo "AZURE_STATIC_WEB_APP_NAME=swa-archie-${ENV_SUFFIX}" >> $GITHUB_ENV
           echo "NODE_VERSION=18" >> $GITHUB_ENV
           echo "FRONTEND_APP_PATH=frontend/front-end" >> $GITHUB_ENV
           echo "FRONTEND_OUTPUT_PATH=dist" >> $GITHUB_ENV
