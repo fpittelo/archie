@@ -183,7 +183,7 @@ jobs:
     steps:
       - name: Set Global Environment Variables
         run: |
-          echo "AZURE_LOCATION=Switzerland North" >> $GITHUB_ENV
+          echo "AZURE_LOCATION=SwitzerlandNorth" >> $GITHUB_ENV
           # Correctly derive ENV_SUFFIX based on the branch name
           if [[ "${GITHUB_REF}" == "refs/heads/dev" ]]; then
             ENV_SUFFIX="dev"
