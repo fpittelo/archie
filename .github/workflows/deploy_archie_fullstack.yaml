@@ -34,12 +34,12 @@ jobs:
       - name: Set Global Environment Variables
         run: |
           echo "AZURE_LOCATION=Switzerland North" >> $GITHUB_ENV
-          echo "ENV_SUFFIX=${{ github.ref == 'refs/heads/dev' && 'dev' || github.ref == 'refs/heads/qa' && 'qa' || github.ref == 'refs/heads/main' && 'main' }}" >> $GITHUB_ENV
-          echo "AZURE_RESOURCE_GROUP_NAME=rg-archie-${{ env.ENV_SUFFIX }}" >> $GITHUB_ENV
-          echo "AZURE_STORAGE_ACCOUNT_NAME=saarchie${{ env.ENV_SUFFIX }}" >> $GITHUB_ENV
-          echo "AZURE_FUNCTIONAPP_NAME=fnc-archie-${{ env.ENV_SUFFIX }}" >> $GITHUB_ENV
-          echo "AZURE_APP_INSIGHT_NAME=ins-archie-${{ env.ENV_SUFFIX }}" >> $GITHUB_ENV
-          echo "AZURE_STATIC_WEB_APP_NAME=swa-archie-${{ env.ENV_SUFFIX }}" >> $GITHUB_ENV
+          echo "ENV_SUFFIX=${{ github.ref_name == 'refs/heads/dev' && 'dev' || github.ref_name == 'refs/heads/qa' && 'qa' || github.ref_name == 'refs/heads/main' && 'main' }}" >> $GITHUB_ENV
+          echo "AZURE_RESOURCE_GROUP_NAME=rg-archie-${{ github.ref_name == 'refs/heads/dev' && 'dev' || github.ref_name == 'refs/heads/qa' && 'qa' || github.ref_name == 'refs/heads/main' && 'main' }}" >> $GITHUB_ENV
+          echo "AZURE_STORAGE_ACCOUNT_NAME=saarchie${{ github.ref_name == 'refs/heads/dev' && 'dev' || github.ref_name == 'refs/heads/qa' && 'qa' || github.ref_name == 'refs/heads/main' && 'main' }}" >> $GITHUB_ENV
+          echo "AZURE_FUNCTIONAPP_NAME=fnc-archie-${{ github.ref_name == 'refs/heads/dev' && 'dev' || github.ref_name == 'refs/heads/qa' && 'qa' || github.ref_name == 'refs/heads/main' && 'main' }}" >> $GITHUB_ENV
+          echo "AZURE_APP_INSIGHT_NAME=ins-archie-${{ github.ref_name == 'refs/heads/dev' && 'dev' || github.ref_name == 'refs/heads/qa' && 'qa' || github.ref_name == 'refs/heads/main' && 'main' }}" >> $GITHUB_ENV
+          echo "AZURE_STATIC_WEB_APP_NAME=swa-archie-${{ github.ref_name == 'refs/heads/dev' && 'dev' || github.ref_name == 'refs/heads/qa' && 'qa' || github.ref_name == 'refs/heads/main' && 'main' }}" >> $GITHUB_ENV
           echo "PYTHON_VERSION=3.11" >> $GITHUB_ENV
           echo "AZURE_FUNCTIONAPP_PACKAGE_PATH=backend/ArchieMCPFunctionApp" >> $GITHUB_ENV
 
@@ -57,18 +57,18 @@ jobs:
         uses: azure/CLI@v2
         with:
           inlineScript: |
-            echo "Ensuring resource group ${{ env.AZURE_RESOURCE_GROUP_NAME }} exists in ${{ env.AZURE_LOCATION }}..."
-            az group create --name "${{ env.AZURE_RESOURCE_GROUP_NAME }}" --location "${{ env.AZURE_LOCATION }}" --output none
+            echo "Ensuring resource group $AZURE_RESOURCE_GROUP_NAME exists in $AZURE_LOCATION..."
+            az group create --name "$AZURE_RESOURCE_GROUP_NAME" --location "$AZURE_LOCATION" --output none
 
       - name: Create/Update Azure Storage Account
         uses: azure/CLI@v2
         with:
           inlineScript: |
-            echo "Ensuring storage account ${{ env.AZURE_STORAGE_ACCOUNT_NAME }} exists..."
+            echo "Ensuring storage account $AZURE_STORAGE_ACCOUNT_NAME exists..."
             az storage account create \
-              --name "${{ env.AZURE_STORAGE_ACCOUNT_NAME }}" \
-              --resource-group "${{ env.AZURE_RESOURCE_GROUP_NAME }}" \
-              --location "${{ env.AZURE_LOCATION }}" \
+              --name "$AZURE_STORAGE_ACCOUNT_NAME" \
+              --resource-group "$AZURE_RESOURCE_GROUP_NAME" \
+              --location "$AZURE_LOCATION" \
               --sku Standard_LRS \
               --kind StorageV2 \
               --allow-blob-public-access false \
@@ -78,14 +78,14 @@ jobs:
         uses: azure/CLI@v2
         with:
           inlineScript: |
-            echo "Ensuring Function App ${{ env.AZURE_FUNCTIONAPP_NAME }} exists with Consumption plan..."
+            echo "Ensuring Function App $AZURE_FUNCTIONAPP_NAME exists with Consumption plan..."
             az functionapp create \
-              --name "${{ env.AZURE_FUNCTIONAPP_NAME }}" \
-              --resource-group "${{ env.AZURE_RESOURCE_GROUP_NAME }}" \
-              --storage-account "${{ env.AZURE_STORAGE_ACCOUNT_NAME }}" \
-              --consumption-plan-location "${{ env.AZURE_LOCATION }}" \
+              --name "$AZURE_FUNCTIONAPP_NAME" \
+              --resource-group "$AZURE_RESOURCE_GROUP_NAME" \
+              --storage-account "$AZURE_STORAGE_ACCOUNT_NAME" \
+              --consumption-plan-location "$AZURE_LOCATION" \
               --runtime python \
-              --runtime-version "${{ env.PYTHON_VERSION }}" \
+              --runtime-version "$PYTHON_VERSION" \
               --functions-version 4 \
               --os-type Linux \
               --output none
@@ -94,11 +94,11 @@ jobs:
         uses: azure/CLI@v2
         with:
           inlineScript: |
-            echo "Ensuring Application Insights ${{ env.AZURE_APP_INSIGHT_NAME }} exists..."
+            echo "Ensuring Application Insights $AZURE_APP_INSIGHT_NAME exists..."
             az monitor app-insights component create \
-              --app "${{ env.AZURE_APP_INSIGHT_NAME }}" \
-              --location "${{ env.AZURE_LOCATION }}" \
-              --resource-group "${{ env.AZURE_RESOURCE_GROUP_NAME }}" \
+              --app "$AZURE_APP_INSIGHT_NAME" \
+              --location "$AZURE_LOCATION" \
+              --resource-group "$AZURE_RESOURCE_GROUP_NAME" \
               --application-type web \
               --output none
 
@@ -109,8 +109,8 @@ jobs:
             echo "Ensuring Log Analytics Workspace log-archie-${{ env.ENV_SUFFIX }} exists..."
             az monitor log-analytics workspace create \
               --workspace-name "log-archie-${{ env.ENV_SUFFIX }}" \
-              --resource-group "${{ env.AZURE_RESOURCE_GROUP_NAME }}" \
-              --location "${{ env.AZURE_LOCATION }}" \
+              --resource-group "$AZURE_RESOURCE_GROUP_NAME" \
+              --location "$AZURE_LOCATION" \
               --sku PerGB2018 \
               --output none
 
