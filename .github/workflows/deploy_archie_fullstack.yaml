@@ -23,7 +23,7 @@ permissions:
 jobs:
   # --- Backend Infrastructure and Deployment Job ---
   build_and_deploy_backend:
-    name: Provision & Deploy Backend (Functions) - ${{ github.ref_name }}
+    name: Deploy Backend ${{ github.ref_name }}
     runs-on: ubuntu-latest
 
     environment:
@@ -35,9 +35,11 @@ jobs:
         run: |
           echo "AZURE_LOCATION=Switzerland North" >> $GITHUB_ENV
           echo "ENV_SUFFIX=${{ github.ref_name == 'dev' && 'dev' || github.ref_name == 'qa' && 'qa' || github.ref_name == 'main' && 'main' }}" >> $GITHUB_ENV
-          echo "AZURE_RESOURCE_GROUP_NAME=rg-archie-${{ github.ref_name == 'dev' && 'dev' || github.ref_name == 'qa' && 'qa' || github.ref_name == 'main' && 'main' }}" >> $GITHUB_ENV
-          echo "AZURE_STORAGE_ACCOUNT_NAME=saarchie${{ github.ref_name == 'dev' && 'dev' || github.ref_name == 'qa' && 'qa' || github.ref_name == 'main' && 'main' }}" >> $GITHUB_ENV
-          echo "AZURE_FUNCTIONAPP_NAME=archie-func-${{ github.ref_name == 'dev' && 'dev' || github.ref_name == 'qa' && 'qa' || github.ref_name == 'main' && 'main' }}" >> $GITHUB_ENV
+          echo "AZURE_RESOURCE_GROUP_NAME=rg-archie-${{ env.ENV_SUFFIX }}" >> $GITHUB_ENV
+          echo "AZURE_STORAGE_ACCOUNT_NAME=saarchie${{ env.ENV_SUFFIX }}" >> $GITHUB_ENV
+          echo "AZURE_FUNCTIONAPP_NAME=fnc-archie-${{ env.ENV_SUFFIX }}" >> $GITHUB_ENV
+          echo "AZURE_APP_INSIGHT_NAME=ins-archie-${{ env.ENV_SUFFIX }}" >> $GITHUB_ENV
+          echo "AZURE_STATIC_WEB_APP_NAME=swa-archie-${{ env.ENV_SUFFIX }}" >> $GITHUB_ENV
           echo "PYTHON_VERSION=3.11" >> $GITHUB_ENV
           echo "AZURE_FUNCTIONAPP_PACKAGE_PATH=backend/ArchieMCPFunctionApp" >> $GITHUB_ENV
 
@@ -81,11 +83,35 @@ jobs:
               --name "${{ env.AZURE_FUNCTIONAPP_NAME }}" \
               --resource-group "${{ env.AZURE_RESOURCE_GROUP_NAME }}" \
               --storage-account "${{ env.AZURE_STORAGE_ACCOUNT_NAME }}" \
-              --consumption-plan-location "Switzerlandnorth" \
+              --consumption-plan-location "${{ env.AZURE_LOCATION }}" \
               --runtime python \
               --runtime-version "${{ env.PYTHON_VERSION }}" \
               --functions-version 4 \
               --os-type Linux \
+              --output none
+
+      - name: Create/Update Azure Application Insights
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            echo "Ensuring Application Insights ${{ env.AZURE_APP_INSIGHT_NAME }} exists..."
+            az monitor app-insights component create \
+              --app "${{ env.AZURE_APP_INSIGHT_NAME }}" \
+              --location "${{ env.AZURE_LOCATION }}" \
+              --resource-group "${{ env.AZURE_RESOURCE_GROUP_NAME }}" \
+              --application-type web \
+              --output none
+
+      - name: Create/Update Azure Log Analytics Workspace
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            echo "Ensuring Log Analytics Workspace log-archie-${{ env.ENV_SUFFIX }} exists..."
+            az monitor log-analytics workspace create \
+              --workspace-name "log-archie-${{ env.ENV_SUFFIX }}" \
+              --resource-group "${{ env.AZURE_RESOURCE_GROUP_NAME }}" \
+              --location "${{ env.AZURE_LOCATION }}" \
+              --sku PerGB2018 \
               --output none
 
       - name: Setup Python ${{ env.PYTHON_VERSION }}
@@ -135,7 +161,7 @@ jobs:
 
   # --- Frontend Infrastructure and Deployment Job ---
   build_and_deploy_frontend:
-    name: Provision & Deploy Frontend (SWA) - ${{ github.ref_name }}
+    name: Deploy Frontend ${{ github.ref_name }}
     runs-on: ubuntu-latest
     needs: build_and_deploy_backend # Ensure RG and backend infra exist first
 
@@ -149,7 +175,7 @@ jobs:
           echo "AZURE_LOCATION=Switzerland North" >> $GITHUB_ENV
           echo "ENV_SUFFIX=${{ github.ref == 'refs/heads/dev' && 'dev' || github.ref == 'refs/heads/qa' && 'qa' || github.ref == 'refs/heads/main' && 'main' }}" >> $GITHUB_ENV
           echo "AZURE_RESOURCE_GROUP_NAME=rg-archie-${{ env.ENV_SUFFIX }}" >> $GITHUB_ENV
-          echo "AZURE_STATIC_WEB_APP_NAME=archie-swa-${{ env.ENV_SUFFIX }}" >> $GITHUB_ENV
+          echo "AZURE_STATIC_WEB_APP_NAME=swa-archie-${{ env.ENV_SUFFIX }}" >> $GITHUB_ENV
           echo "NODE_VERSION=18" >> $GITHUB_ENV
           echo "FRONTEND_APP_PATH=frontend/front-end" >> $GITHUB_ENV
           echo "FRONTEND_OUTPUT_PATH=dist" >> $GITHUB_ENV
