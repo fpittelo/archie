@@ -197,28 +197,21 @@ jobs:
           inlineScript: |
             #!/bin/bash
   
-            # Set variables from GitHub environment variables
-            RESOURCE_GROUP="$AZURE_RESOURCE_GROUP" #Should be defined in github env
-            STATIC_WEB_APP_NAME="$AZURE_STATIC_WEB_APP_NAME" #Should be defined in github env
-            LOCATION="$AZURE_LOCATION" #Should be defined in github env
-            BRANCH="${{ github.ref_name }}" # Use github.ref_name for branch name
-            APP_LOCATION="/"
-            SOURCE="frontend"
+            RESOURCE_GROUP="$AZURE_RESOURCE_GROUP_NAME"
+            STATIC_WEB_APP_NAME="$AZURE_STATIC_WEB_APP_NAME"
+            LOCATION="$AZURE_LOCATION"
+            APP_LOCATION="${{ vars.FRONTEND_APP_PATH }}" # Use your actual frontend path
+            output_location: "${{ vars.FRONTEND_APP_PATH }}/${{ vars.FRONTEND_OUTPUT_PATH }}"
   
-            # Check if the Static Web App already exists
             if az staticwebapp show --name "$STATIC_WEB_APP_NAME" --resource-group "$RESOURCE_GROUP" >/dev/null 2>&1; then
                 echo "Static Web App '$STATIC_WEB_APP_NAME' already exists in Resource Group '$RESOURCE_GROUP'."
             else
                 echo "Static Web App '$STATIC_WEB_APP_NAME' does not exist. Creating..."
-                # Create the Static Web App
                 az staticwebapp create \
                     --name "$STATIC_WEB_APP_NAME" \
                     --resource-group "$RESOURCE_GROUP" \
-                    --source "$SOURCE" \
                     --location "$LOCATION" \
-                    --branch "$BRANCH" \
-                    --app-location "$APP_LOCATION" \
-                    --subscription "${{ secrets.AZURE_SUBSCRIPTION_ID }}" # Use the subscription ID from the secret
+                    --app-location "$APP_LOCATION"
                 if [ $? -eq 0 ]; then
                   echo "Static Web App '$STATIC_WEB_APP_NAME' created successfully."
                 else
@@ -232,15 +225,19 @@ jobs:
         with:
           node-version:               ${{ vars.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path:      package-lock.json
-
-      - name: Generate package-lock.json
-        working-directory:            ${{ vars.FRONTEND_APP_PATH }}
-        run: npm install
+          cache-dependency-path:      ${{ vars.FRONTEND_APP_PATH }}/package-lock.json
 
       - name: Install Frontend Dependencies
         working-directory:            ${{ vars.FRONTEND_APP_PATH }}
-        run: npm ci
+        run: npm install
+
+      # - name: Generate package-lock.json
+      #   working-directory:            ${{ vars.FRONTEND_APP_PATH }}
+      #   run: npm install
+
+      # - name: Install Frontend Dependencies
+      #   working-directory:            ${{ vars.FRONTEND_APP_PATH }}
+      #   run: npm ci
 
       - name: Build Frontend Application
         working-directory:            ${{ vars.FRONTEND_APP_PATH }}
