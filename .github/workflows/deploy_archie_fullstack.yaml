@@ -201,7 +201,7 @@ jobs:
             if [[ $? -ne 0 ]]; then
               echo "Static Web App not found, creating..."
               az staticwebapp create \
-                --name "$AZURE_STATIC_WEB_APP_NAME" \
+                --name "wap-archie-dev" \
                 --resource-group "$AZURE_RESOURCE_GROUP_NAME" \
                 --location "$AZURE_LOCATION" \
                 --source /dev/null --branch "${{ github.ref_name }}" \
