@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "script.js",
   "scripts": {
-    "build": "mkdir -p dist && cp -r * dist/ && rm -rf dist/dist",
+    "build": "mkdir -p dist && rsync -av --exclude=dist --exclude=node_modules ./ ./dist/",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
