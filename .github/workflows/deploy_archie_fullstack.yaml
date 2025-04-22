@@ -201,7 +201,7 @@ jobs:
             STATIC_WEB_APP_NAME="$AZURE_STATIC_WEB_APP_NAME"
             LOCATION="$AZURE_LOCATION"
             APP_LOCATION="${{ vars.FRONTEND_APP_PATH }}" # Use your actual frontend path
-            output_location: "${{ vars.FRONTEND_APP_PATH }}/${{ vars.FRONTEND_OUTPUT_PATH }}"
+            # output_location: "${{ vars.FRONTEND_APP_PATH }}/${{ vars.FRONTEND_OUTPUT_PATH }}"
   
             if az staticwebapp show --name "$STATIC_WEB_APP_NAME" --resource-group "$RESOURCE_GROUP" >/dev/null 2>&1; then
                 echo "Static Web App '$STATIC_WEB_APP_NAME' already exists in Resource Group '$RESOURCE_GROUP'."
