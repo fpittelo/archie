@@ -173,7 +173,7 @@ jobs:
 
     # --- Job-specific Environment Variables ---
     env:
-      NODE_VERSION: 18
+      NODE_VERSION:                 ${{ vars.NODE_VERSION }}
       FRONTEND_APP_PATH:            ${{ vars.FRONTEND_APP_PATH }}      
       FRONTEND_OUTPUT_PATH:         ${{ vars.FRONTEND_OUTPUT_PATH }}
       AZURE_LOCATION:               ${{ vars.AZURE_LOCATION }}
