@@ -179,7 +179,6 @@ jobs:
       AZURE_LOCATION:               ${{ vars.AZURE_LOCATION }}
       AZURE_RESOURCE_GROUP_NAME:    ${{ vars.AZURE_RESOURCE_GROUP_NAME }}
       AZURE_STATIC_WEB_APP_NAME:    ${{ vars.AZURE_STATIC_WEB_APP_NAME }}
-      AZURE_CLIENT_ID:              ${{ secrets.AZURE_CLIENT_ID }}  
 
     steps:
       - name: Checkout repository
@@ -197,11 +196,11 @@ jobs:
         with:
           inlineScript: |
             echo "Ensuring Static Web App resource $AZURE_STATIC_WEB_APP_NAME exists..."
-            az staticwebapp show --name "$AZURE_STATIC_WEB_APP_NAME" --resource-group "$AZURE_RESOURCE_GROUP_NAME"
+            az staticwebapp show --name "swaarchiedev" --resource-group "$AZURE_RESOURCE_GROUP_NAME"
             if [[ $? -ne 0 ]]; then
               echo "Static Web App not found, creating..."
               az staticwebapp create \
-                --name "wap-archie-dev" \
+                --name "swaarchiedev" \
                 --resource-group "$AZURE_RESOURCE_GROUP_NAME" \
                 --location "$AZURE_LOCATION" \
                 --source /dev/null --branch "${{ github.ref_name }}" \
