@@ -227,17 +227,17 @@ jobs:
           cache: 'npm'
           cache-dependency-path:      ${{ vars.FRONTEND_APP_PATH }}/package-lock.json
 
-      - name: Install Frontend Dependencies
+      #- name: Install Frontend Dependencies
+      # working-directory:            ${{ vars.FRONTEND_APP_PATH }}
+      # run: npm install
+
+      - name: Generate package-lock.json
         working-directory:            ${{ vars.FRONTEND_APP_PATH }}
         run: npm install
 
-      # - name: Generate package-lock.json
-      #   working-directory:            ${{ vars.FRONTEND_APP_PATH }}
-      #   run: npm install
-
-      # - name: Install Frontend Dependencies
-      #   working-directory:            ${{ vars.FRONTEND_APP_PATH }}
-      #   run: npm ci
+      - name: Install Frontend Dependencies
+        working-directory:            ${{ vars.FRONTEND_APP_PATH }}
+        run: npm ci
 
       - name: Build Frontend Application
         working-directory:            ${{ vars.FRONTEND_APP_PATH }}
