@@ -41,6 +41,12 @@ jobs:
       AZURE_RESOURCE_GROUP_NAME: rg-archie-${{ github.event.inputs.environment_suffix }}
       # Assumption: Static Web App name follows this pattern. Update if different.
       AZURE_STATIC_WEB_APP_NAME: archie-swa-${{ github.event.inputs.environment_suffix }}
+      # Assumption: Storage Account name follows this pattern.
+      AZURE_STORAGE_ACCOUNT_NAME: archiestorage${{ github.event.inputs.environment_suffix }}
+      # Assumption: Application Insights name follows this pattern.
+      AZURE_APP_INSIGHT_NAME: archie-app-insights-${{ github.event.inputs.environment_suffix }}
+      # Assumption: Log Analytics Workspace name follows this pattern.
+      LOG_ANALYTICS_WORKSPACE_NAME: archie-logs-${{ github.event.inputs.environment_suffix }}
       # --- End Important Assumptions ---
 
     steps:
@@ -58,36 +64,21 @@ jobs:
         run: |
           echo "Attempting to delete the following resources:"
           echo "Resource Group: ${{ env.AZURE_RESOURCE_GROUP_NAME }}"
-          echo "Function App:   ${{ env.AZURE_FUNCTIONAPP_NAME }}"
-          echo "Static Web App: ${{ env.AZURE_STATIC_WEB_APP_NAME }}"
           echo "Subscription ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}"
           echo "Environment Suffix: ${{ env.ENVIRONMENT_SUFFIX }}"
           echo "::warning::Verify these details carefully before proceeding if running manually!"
+          echo "::warning::This will delete the ENTIRE resource group and all resources within it!"
           # Add a small delay if running manually to allow cancellation
           # sleep 10
 
-      - name: Delete Azure Function App
+      - name: Delete Azure Resource Group
         uses: azure/CLI@v1
         with:
           inlineScript: |
-            echo "Attempting to delete Function App '${{ env.AZURE_FUNCTIONAPP_NAME }}' in resource group '${{ env.AZURE_RESOURCE_GROUP_NAME }}'..."
-            az functionapp delete --name "${{ env.AZURE_FUNCTIONAPP_NAME }}" --resource-group "${{ env.AZURE_RESOURCE_GROUP_NAME }}" --yes
-            echo "Function App deletion command executed (check Azure portal for status)."
-        # Continue even if deletion fails (e.g., resource already deleted)
-        # Be careful with continue-on-error, as it might mask real issues.
-        # Consider removing it if you want the workflow to fail on deletion errors.
-        continue-on-error: true
-
-      - name: Delete Azure Static Web App
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            echo "Attempting to delete Static Web App '${{ env.AZURE_STATIC_WEB_APP_NAME }}' in resource group '${{ env.AZURE_RESOURCE_GROUP_NAME }}'..."
-            # Note: SWA delete might take a moment to detach from the Function App if linked.
-            az staticwebapp delete --name "${{ env.AZURE_STATIC_WEB_APP_NAME }}" --resource-group "${{ env.AZURE_RESOURCE_GROUP_NAME }}" --yes
-            echo "Static Web App deletion command executed (check Azure portal for status)."
-        # Continue even if deletion fails (e.g., resource already deleted)
-        continue-on-error: true
+            echo "Deleting resource group '${{ env.AZURE_RESOURCE_GROUP_NAME }}'..."
+            az group delete --name "${{ env.AZURE_RESOURCE_GROUP_NAME }}" --yes
+            echo "Resource Group deletion command executed (check Azure portal for status)."
+        continue-on-error: false
 
       - name: Azure Logout
         run: az logout
