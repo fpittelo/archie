@@ -46,9 +46,9 @@ jobs:
       - name: 'Azure Login using OIDC'
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          client-id:                    ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id:                    ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id:              ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Validate Environment Variables
         run: |
@@ -123,7 +123,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          python-version:           ${{ vars.PYTHON_VERSION }}
 
       - name: Install Python dependencies
         run: |
@@ -147,8 +147,8 @@ jobs:
       - name: 'Deploy Code to Azure Function App'
         uses: Azure/functions-action@v1
         with:
-          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
-          package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+          app-name:               ${{ vars.AZURE_FUNCTIONAPP_NAME }}
+          package:                ${{ vars.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
 
       - name: Restart Azure Function App
         uses: azure/CLI@v2
@@ -174,11 +174,12 @@ jobs:
     # --- Job-specific Environment Variables ---
     env:
       NODE_VERSION: 18
-      FRONTEND_APP_PATH: frontend/front-end
-      FRONTEND_OUTPUT_PATH: dist
-      AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
-      AZURE_RESOURCE_GROUP_NAME: ${{ vars.AZURE_RESOURCE_GROUP_NAME }}
-      AZURE_STATIC_WEB_APP_NAME: ${{ vars.AZURE_STATIC_WEB_APP_NAME }}
+      FRONTEND_APP_PATH:            ${{ vars.FRONTEND_APP_PATH }}      
+      FRONTEND_OUTPUT_PATH:         ${{ vars.FRONTEND_OUTPUT_PATH }}
+      AZURE_LOCATION:               ${{ vars.AZURE_LOCATION }}
+      AZURE_RESOURCE_GROUP_NAME:    ${{ vars.AZURE_RESOURCE_GROUP_NAME }}
+      AZURE_STATIC_WEB_APP_NAME:    ${{ vars.AZURE_STATIC_WEB_APP_NAME }}
+      AZURE_CLIENT_ID:              ${{ secrets.AZURE_CLIENT_ID }}  
 
     steps:
       - name: Checkout repository
@@ -187,24 +188,17 @@ jobs:
       - name: 'Azure Login using OIDC'
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Ensure Azure Resource Group Exists
-        uses: azure/CLI@v2
-        with:
-          inlineScript: |
-            echo "Ensuring resource group $AZURE_RESOURCE_GROUP_NAME exists in $AZURE_LOCATION..."
-            az group create --name "$AZURE_RESOURCE_GROUP_NAME" --location "$AZURE_LOCATION" --output none
+          client-id:                ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id:                ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id:          ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Create/Update Azure Static Web App Resource
         uses: azure/CLI@v2
         with:
           inlineScript: |
             echo "Ensuring Static Web App resource $AZURE_STATIC_WEB_APP_NAME exists..."
-            swa_exists=$(az staticwebapp show --name "$AZURE_STATIC_WEB_APP_NAME" --resource-group "$AZURE_RESOURCE_GROUP_NAME" --query name -o tsv 2>/dev/null)
-            if [[ -z "$swa_exists" ]]; then
+            az staticwebapp show --name "$AZURE_STATIC_WEB_APP_NAME" --resource-group "$AZURE_RESOURCE_GROUP_NAME"
+            if [[ $? -ne 0 ]]; then
               echo "Static Web App not found, creating..."
               az staticwebapp create \
                 --name "$AZURE_STATIC_WEB_APP_NAME" \
@@ -220,16 +214,16 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version:               ${{ vars.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: ${{ env.FRONTEND_APP_PATH }}/package-lock.json
+          cache-dependency-path:      ${{ vars.FRONTEND_APP_PATH }}/package-lock.json
 
       - name: Install Frontend Dependencies
-        working-directory: ${{ env.FRONTEND_APP_PATH }}
+        working-directory:            ${{ vars.FRONTEND_APP_PATH }}
         run: npm ci
 
       - name: Build Frontend Application
-        working-directory: ${{ env.FRONTEND_APP_PATH }}
+        working-directory:            ${{ vars.FRONTEND_APP_PATH }}
         run: npm run build
 
       - name: 'Deploy Code to Azure Static Web App'
@@ -238,8 +232,8 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
-          app_location: ${{ env.FRONTEND_APP_PATH }}
-          output_location: "${{ env.FRONTEND_APP_PATH }}/${{ env.FRONTEND_OUTPUT_PATH }}"
+          app_location: ${{ vars.FRONTEND_APP_PATH }}
+          output_location: "${{ vars.FRONTEND_APP_PATH }}/${{ vars.FRONTEND_OUTPUT_PATH }}"
 
       - name: Azure Logout
         run: az logout
