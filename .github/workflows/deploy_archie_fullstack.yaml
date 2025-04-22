@@ -196,8 +196,8 @@ jobs:
         with:
           inlineScript: |
             echo "Ensuring Static Web App resource swa-archie-${{ github.ref_name }} exists..."
-            az staticwebapp show --name "swa-archie-${{ github.ref_name }}" --resource-group "$AZURE_RESOURCE_GROUP_NAME"
-            if [[ $? -ne 0 ]]; then
+            # Use command || true to prevent the script from failing if the resource doesn't exist
+            az staticwebapp show --name "swa-archie-${{ github.ref_name }}" --resource-group "$AZURE_RESOURCE_GROUP_NAME" || {
               echo "Static Web App not found, creating..."
               az staticwebapp create \
                 --name "swa-archie-${{ github.ref_name }}" \
@@ -209,9 +209,7 @@ jobs:
                 --output-location "frontend/dist" \
                 --output none
               echo "Static Web App created."
-            else
-              echo "Static Web App already exists."
-            fi
+            }
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
