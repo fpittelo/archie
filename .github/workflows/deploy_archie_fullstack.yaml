@@ -208,6 +208,8 @@ jobs:
                 --app-location "frontend" \
                 --output-location "frontend/dist" \
                 --output none
+                --source "github" \
+                --source-branch "${{ github.ref_name }}" \
               echo "Static Web App created."
             }
 
