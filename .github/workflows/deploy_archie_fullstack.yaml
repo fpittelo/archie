@@ -201,11 +201,9 @@ jobs:
             RESOURCE_GROUP="$AZURE_RESOURCE_GROUP" #Should be defined in github env
             STATIC_WEB_APP_NAME="$AZURE_STATIC_WEB_APP_NAME" #Should be defined in github env
             LOCATION="$AZURE_LOCATION" #Should be defined in github env
-            REPOSITORY_URL="https://github.com/fpittelo/archie"
             BRANCH="${{ github.ref_name }}" # Use github.ref_name for branch name
             APP_LOCATION="/"
             SOURCE="frontend"
-            #SUBSCRIPTION_ID="${{ secrets.AZURE_SUBSCRIPTION_ID }}" # Removed redundant declaration
   
             # Check if the Static Web App already exists
             if az staticwebapp show --name "$STATIC_WEB_APP_NAME" --resource-group "$RESOURCE_GROUP" >/dev/null 2>&1; then
@@ -218,7 +216,6 @@ jobs:
                     --resource-group "$RESOURCE_GROUP" \
                     --source "$SOURCE" \
                     --location "$LOCATION" \
-                    --repository-url "$REPOSITORY_URL" \
                     --branch "$BRANCH" \
                     --app-location "$APP_LOCATION" \
                     --subscription "${{ secrets.AZURE_SUBSCRIPTION_ID }}" # Use the subscription ID from the secret
