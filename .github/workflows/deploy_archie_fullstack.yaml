@@ -217,7 +217,7 @@ jobs:
                     --resource-group "$RESOURCE_GROUP" \
                     --source "$SOURCE" \
                     --location "$LOCATION" \
-                    --repository-url "$REPOSITORY_URL" \
+            #       --repository-url "$REPOSITORY_URL" \
                     --branch ${{github.ref}} \
                     --app-location "$APP_LOCATION"
                 if [ $? -eq 0 ]; then
