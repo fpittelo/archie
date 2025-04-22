@@ -216,7 +216,11 @@ jobs:
         with:
           node-version:               ${{ vars.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path:      ${{ vars.FRONTEND_APP_PATH }}/package-lock.json
+          cache-dependency-path:      package-lock.json
+
+      - name: Generate package-lock.json
+        working-directory:            ${{ vars.FRONTEND_APP_PATH }}
+        run: npm install
 
       - name: Install Frontend Dependencies
         working-directory:            ${{ vars.FRONTEND_APP_PATH }}
