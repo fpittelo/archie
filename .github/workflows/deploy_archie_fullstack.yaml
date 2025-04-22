@@ -19,7 +19,7 @@ permissions:
 jobs:
   # --- Backend Infrastructure and Deployment Job ---
   build_and_deploy_backend:
-    name: Deploy Backend ${{ github.ref_name }}
+    name: Deploy Backend
     runs-on: ubuntu-latest
 
     # --- Use GitHub Environment based on branch ---
@@ -163,7 +163,7 @@ jobs:
 
   # --- Frontend Infrastructure and Deployment Job ---
   build_and_deploy_frontend:
-    name: Deploy Frontend ${{ github.ref_name }}
+    name: Deploy Frontend
     runs-on: ubuntu-latest
     needs: build_and_deploy_backend
 
@@ -196,14 +196,17 @@ jobs:
         with:
           inlineScript: |
             echo "Ensuring Static Web App resource $AZURE_STATIC_WEB_APP_NAME exists..."
-            az staticwebapp show --name "swaarchiedev" --resource-group "$AZURE_RESOURCE_GROUP_NAME"
+            az staticwebapp show --name "$AZURE_STATIC_WEB_APP_NAME" --resource-group "$AZURE_RESOURCE_GROUP_NAME"
             if [[ $? -ne 0 ]]; then
               echo "Static Web App not found, creating..."
               az staticwebapp create \
-                --name "swaarchiedev" \
+                --name "$AZURE_STATIC_WEB_APP_NAME" \
                 --resource-group "$AZURE_RESOURCE_GROUP_NAME" \
                 --location "$AZURE_LOCATION" \
-                --source /dev/null --branch "${{ github.ref_name }}" \
+                --sku Free \
+                --branch "${{ github.ref_name }}" \
+                --app-location "frontend" \
+                --output-location "frontend/dist" \
                 --output none
               echo "Static Web App created."
             else
