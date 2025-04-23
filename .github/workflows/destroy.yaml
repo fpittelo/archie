@@ -1,10 +1,17 @@
 # Destroy Azure Resources Workflow
-name: Destroy Environment
+name: Destroy
 
 on:
-  push:
-    branches:
-      - destroy
+  workflow_dispatch:
+    inputs:
+        environment:
+          description: 'Environment to destroy (dev/qa/main)'
+          required: true
+          type: choice
+          options:
+            - dev
+            - qa
+            - main
 
 permissions:
   id-token: write
