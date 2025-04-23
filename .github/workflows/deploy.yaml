@@ -85,7 +85,7 @@ jobs:
           echo "TF_VAR_az_client_id=${{ secrets.AZURE_CLIENT_ID }}" >> $GITHUB_ENV
           echo "TF_VAR_az_tenant_id=${{ secrets.AZURE_TENANT_ID }}" >> $GITHUB_ENV
           echo "TF_VAR_az_subscription_id=${{ secrets.AZURE_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
-          echo "TF_VAR_az_container_name=${{ env.ENVIRONMENT }}-bkd-iat-website-co" >> $GITHUB_ENV
+          echo "TF_VAR_az_container_name=${{ vars.AZURE_BKD_CONTAINER_NAME }}" >> $GITHUB_ENV
   
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
@@ -103,7 +103,6 @@ jobs:
             -backend-config="storage_account_name=${{ vars.AZURE_BKD_SA_NAME }}" \
             -backend-config="container_name=${{ vars.AZURE_BKD_CONTAINER_NAME }}" \
             -backend-config="key=archie-${{ github.ref_name }}.tfstate"
-        #   -var-file="${{ github.ref_name }}.tfvars"
         working-directory: ./infra  # Update the working directory to the new infra folder
   
       - name: Terraform Apply
@@ -112,12 +111,10 @@ jobs:
           ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           ARM_USE_OIDC: true
-          ENVIRONMENT: ${{ env.ENVIRONMENT }}
-          TF_LOG: DEBUG
-          TF_LOG_PATH: terraform.log
+          ENVIRONMENT: ${{ github.ref_name }}
         run: |
-          echo "Using environment: ${{ env.ENVIRONMENT }}"
-          terraform apply -var-file="${{ env.ENVIRONMENT }}.tfvars" -auto-approve
+          echo "Using environment: ${{ github.ref_name }}"
+          terraform apply -var-file="${{ github.ref_name }}.tfvars" -auto-approve
         working-directory: ./infra  # Update the working directory to the new infra folder
 
       # Initialize and applyTerraform
