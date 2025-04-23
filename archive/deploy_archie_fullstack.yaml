@@ -1,0 +1,257 @@
+# .github/workflows/deploy_archie_fullstack.yaml
+name: Deploy Archie
+
+# --- Workflow Triggers ---
+on:
+  push:
+    branches:
+      - dev       # Trigger on push to dev branch
+      - qa        # Trigger on push to qa branch
+      - main      # Trigger on push to main branch
+  workflow_dispatch: # Allow manual triggering from GitHub UI
+
+# --- Permissions ---
+permissions:
+  id-token: write # Required for Azure OIDC Login
+  contents: read  # Required for actions/checkout
+
+# --- Jobs ---
+jobs:
+  # --- Backend Infrastructure and Deployment Job ---
+  build_and_deploy_backend:
+    name: Deploy Backend
+    runs-on: ubuntu-latest
+
+    # --- Use GitHub Environment based on branch ---
+    environment:
+      name: ${{ (github.ref == 'refs/heads/dev' && 'dev') || (github.ref == 'refs/heads/qa' && 'qa') || (github.ref == 'refs/heads/main' && 'main') }}
+
+    # --- Job-specific Environment Variables ---
+    env:
+      AZURE_LOCATION:                   ${{ vars.AZURE_LOCATION }}
+      AZURE_RESOURCE_GROUP_NAME:        ${{ vars.AZURE_RESOURCE_GROUP_NAME }}
+      AZURE_STORAGE_ACCOUNT_NAME:       ${{ vars.AZURE_STORAGE_ACCOUNT_NAME }}
+      PYTHON_VERSION:                   ${{ vars.PYTHON_VERSION }}
+      AZURE_FUNCTIONAPP_NAME:           ${{ vars.AZURE_FUNCTIONAPP_NAME }}
+      AZURE_FUNCTIONAPP_PACKAGE_PATH:   ${{ vars.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+      AZURE_STATIC_WEB_APP_NAME:        ${{ vars.AZURE_STATIC_WEB_APP_NAME }}
+      AZURE_APP_INSIGHT_NAME:           ${{ vars.AZURE_APP_INSIGHT_NAME }}
+      LOG_ANALYTICS_WORKSPACE_NAME:     ${{ vars.LOG_ANALYTICS_WORKSPACE_NAME }}
+      LOG_ANALYTICS_SKU:                ${{ vars.LOG_ANALYTICS_SKU }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 'Azure Login using OIDC'
+        uses: azure/login@v2
+        with:
+          client-id:                    ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id:                    ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id:              ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Validate Environment Variables
+        run: |
+          if [[ -z "$AZURE_RESOURCE_GROUP_NAME" || -z "$AZURE_LOCATION" ]]; then
+            echo "::error::AZURE_RESOURCE_GROUP_NAME or AZURE_LOCATION is not set. Please check your GitHub Environment variables."
+            exit 1
+          fi
+          echo "AZURE_RESOURCE_GROUP_NAME=$AZURE_RESOURCE_GROUP_NAME"
+          echo "AZURE_LOCATION=$AZURE_LOCATION"
+
+      - name: Create/Update Azure Resource Group
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            echo "Ensuring resource group $AZURE_RESOURCE_GROUP_NAME exists in $AZURE_LOCATION..."
+            az group create --name "$AZURE_RESOURCE_GROUP_NAME" --location "$AZURE_LOCATION" --output none
+
+      - name: Create/Update Azure Storage Account
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            echo "Ensuring storage account $AZURE_STORAGE_ACCOUNT_NAME exists..."
+            az storage account create \
+              --name "$AZURE_STORAGE_ACCOUNT_NAME" \
+              --resource-group "$AZURE_RESOURCE_GROUP_NAME" \
+              --location "$AZURE_LOCATION" \
+              --sku Standard_LRS \
+              --kind StorageV2 \
+              --allow-blob-public-access false \
+              --output none
+
+      - name: Create/Update Azure Function App
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            echo "Ensuring Function App $AZURE_FUNCTIONAPP_NAME exists with Consumption plan..."
+            az functionapp create \
+              --name "$AZURE_FUNCTIONAPP_NAME" \
+              --resource-group "$AZURE_RESOURCE_GROUP_NAME" \
+              --storage-account "$AZURE_STORAGE_ACCOUNT_NAME" \
+              --consumption-plan-location "$AZURE_LOCATION" \
+              --runtime python \
+              --runtime-version "3.11" \
+              --functions-version 4 \
+              --os-type Linux \
+              --output none
+
+      - name: Create/Update Azure Application Insights
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            echo "Ensuring Application Insights $AZURE_APP_INSIGHT_NAME exists..."
+            az monitor app-insights component create \
+              --app "$AZURE_APP_INSIGHT_NAME" \
+              --location "$AZURE_LOCATION" \
+              --resource-group "$AZURE_RESOURCE_GROUP_NAME" \
+              --application-type web \
+              --output none
+
+      - name: Create/Update Azure Log Analytics Workspace
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            echo "Ensuring Log Analytics Workspace $LOG_ANALYTICS_WORKSPACE_NAME exists..."
+            az monitor log-analytics workspace create \
+              --workspace-name "$LOG_ANALYTICS_WORKSPACE_NAME" \
+              --resource-group "$AZURE_RESOURCE_GROUP_NAME" \
+              --location "$AZURE_LOCATION" \
+              --sku "$LOG_ANALYTICS_SKU" \
+              --output none
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version:           ${{ vars.PYTHON_VERSION }}
+
+      - name: Install Python dependencies
+        run: |
+          echo "Installing dependencies from $AZURE_FUNCTIONAPP_PACKAGE_PATH/requirements.txt"
+          python -m pip install --upgrade pip
+          pip install -r "$AZURE_FUNCTIONAPP_PACKAGE_PATH/requirements.txt" --target="$AZURE_FUNCTIONAPP_PACKAGE_PATH/.python_packages/lib/python$PYTHON_VERSION/site-packages"
+
+      - name: Validate Deployment Package
+        run: |
+          echo "Validating deployment package at $AZURE_FUNCTIONAPP_PACKAGE_PATH..."
+          if [ ! -f "$AZURE_FUNCTIONAPP_PACKAGE_PATH/host.json" ]; then
+            echo "::error::host.json is missing in the deployment package."
+            exit 1
+          fi
+          if [ ! -d "$AZURE_FUNCTIONAPP_PACKAGE_PATH/.python_packages" ]; then
+            echo "::error::.python_packages directory is missing in the deployment package."
+            exit 1
+          fi
+          echo "Deployment package validation passed."
+
+      - name: 'Deploy Code to Azure Function App'
+        uses: Azure/functions-action@v1
+        with:
+          app-name:               ${{ vars.AZURE_FUNCTIONAPP_NAME }}
+          package:                ${{ vars.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+
+      - name: Restart Azure Function App
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            echo "Restarting Azure Function App $AZURE_FUNCTIONAPP_NAME..."
+            az functionapp restart --name "$AZURE_FUNCTIONAPP_NAME" --resource-group "$AZURE_RESOURCE_GROUP_NAME"
+
+      - name: Azure Logout
+        run: az logout
+        if: always()
+
+  # --- Frontend Infrastructure and Deployment Job ---
+  build_and_deploy_frontend:
+    name: Deploy Frontend
+    runs-on: ubuntu-latest
+    needs: build_and_deploy_backend
+
+    # --- Use GitHub Environment based on branch ---
+    environment:
+      name: ${{ (github.ref == 'refs/heads/dev' && 'dev') || (github.ref == 'refs/heads/qa' && 'qa') || (github.ref == 'refs/heads/main' && 'main') }}
+
+    # --- Job-specific Environment Variables ---
+    env:
+      NODE_VERSION:                 ${{ vars.NODE_VERSION }}
+      FRONTEND_APP_PATH:            ${{ vars.FRONTEND_APP_PATH }}      
+      FRONTEND_OUTPUT_PATH:         ${{ vars.FRONTEND_OUTPUT_PATH }}
+      AZURE_LOCATION:               ${{ vars.AZURE_LOCATION }}
+      AZURE_RESOURCE_GROUP_NAME:    ${{ vars.AZURE_RESOURCE_GROUP_NAME }}
+      AZURE_STATIC_WEB_APP_NAME:    ${{ vars.AZURE_STATIC_WEB_APP_NAME }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 'Azure Login using OIDC'
+        uses: azure/login@v2
+        with:
+          client-id:                ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id:                ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id:          ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Create/Update Azure Static Web App Resource
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            #!/bin/bash
+  
+            RESOURCE_GROUP="$AZURE_RESOURCE_GROUP_NAME"
+            STATIC_WEB_APP_NAME="$AZURE_STATIC_WEB_APP_NAME"
+            LOCATION="$AZURE_LOCATION"
+            APP_LOCATION="${{ vars.FRONTEND_APP_PATH }}" # Use your actual frontend path
+            # output_location: "${{ vars.FRONTEND_APP_PATH }}/${{ vars.FRONTEND_OUTPUT_PATH }}"
+  
+            if az staticwebapp show --name "$STATIC_WEB_APP_NAME" --resource-group "$RESOURCE_GROUP" >/dev/null 2>&1; then
+                echo "Static Web App '$STATIC_WEB_APP_NAME' already exists in Resource Group '$RESOURCE_GROUP'."
+            else
+                echo "Static Web App '$STATIC_WEB_APP_NAME' does not exist. Creating..."
+                az staticwebapp create \
+                    --name "$STATIC_WEB_APP_NAME" \
+                    --resource-group "$RESOURCE_GROUP" \
+                    --location "$LOCATION" \
+                    --app-location "$APP_LOCATION"
+                if [ $? -eq 0 ]; then
+                  echo "Static Web App '$STATIC_WEB_APP_NAME' created successfully."
+                else
+                  echo "Error creating Static Web App '$STATIC_WEB_APP_NAME'."
+                  exit 1
+                fi
+            fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version:               ${{ vars.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path:      ${{ vars.FRONTEND_APP_PATH }}/package-lock.json
+
+      #- name: Install Frontend Dependencies
+      # working-directory:            ${{ vars.FRONTEND_APP_PATH }}
+      # run: npm install
+
+      - name: Generate package-lock.json
+        working-directory:            ${{ vars.FRONTEND_APP_PATH }}
+        run: npm install
+
+      - name: Install Frontend Dependencies
+        working-directory:            ${{ vars.FRONTEND_APP_PATH }}
+        run: npm ci
+
+      - name: Build Frontend Application
+        working-directory:            ${{ vars.FRONTEND_APP_PATH }}
+        run: npm run build
+
+      - name: 'Deploy Code to Azure Static Web App'
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: "upload"
+          app_location: ${{ vars.FRONTEND_APP_PATH }}
+          output_location: "${{ vars.FRONTEND_APP_PATH }}/${{ vars.FRONTEND_OUTPUT_PATH }}"
+
+      - name: Azure Logout
+        run: az logout
+        if: always()

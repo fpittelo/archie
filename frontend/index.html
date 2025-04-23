@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EPFL Archie Your EA Query Tool</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" sizes="32x32" href="media/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="media/favicon-76.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="media/favicon-96.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="media/favicon-152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="media/favicon-180.png">
+    <link rel="icon" href="media/favicon.ico" sizes="any" type="image/x-icon">
+    <link rel="manifest" href="media/site.webmanifest">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: #fff;
+            border-bottom: 1px solid #ddd;
+        }
+        .toolbar .menu-button {
+            display: none; /* Hide the menu button */
+        }
+        .toolbar .menu-button img {
+            height: 24px;
+        }
+        .toolbar .logo-container {
+            display: flex;
+            align-items: center;
+        }
+        .toolbar .logo-container img {
+            height: 40px;
+            margin-right: 10px;
+        }
+        .toolbar .logo-container .app-name {
+            font-weight: bold;
+            font-size: 32px; /* Increased font size */
+            color: #000;
+        }
+        .toolbar .user-info {
+            display: flex;
+            align-items: center;
+            margin-right: 20px; /* Add spacing between user-info and language-switcher */
+            position: relative; /* For positioning the dropdown menu */
+            cursor: pointer;
+        }
+        .toolbar .user-info img {
+            height: 35px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        .toolbar .user-info .user-details {
+            text-align: right;
+        }
+        .toolbar .user-info .user-details .user-name {
+            font-weight: bold;
+        }
+        .toolbar .user-info .user-details .user-id {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        .dropdown-menu {
+            position: absolute;
+            top: 50px;
+            right: 0;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: none; /* Hidden by default */
+            z-index: 1000;
+        }
+        .dropdown-menu a {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            text-decoration: none;
+            color: #000;
+            font-size: 14px;
+        }
+        .dropdown-menu a:hover {
+            background-color: #f7f7f7;
+        }
+        .dropdown-menu a img {
+            margin-right: 10px;
+            height: 8px; /* Reduced size by 50% */
+        }
+        .toolbar .language-switcher {
+            display: flex;
+            align-items: center;
+            margin-left: auto; /* Push the language-switcher to the right */
+        }
+        .toolbar .language-switcher span {
+            cursor: pointer;
+            margin: 0 5px;
+        }
+        .toolbar .language-switcher .active-lang {
+            font-weight: bold;
+            color: #d52b1e; /* EPFL Red */
+        }
+    </style>
+</head>
+<body>
+    <header class="toolbar">
+        <div class="logo-container">
+            <img src="media/logo.png" alt="EPFL Logo">
+            <div class="app-name">Archie</div>
+        </div>
+        <div style="display: flex; align-items: center;">
+            <div class="user-info" onclick="toggleDropdown()">
+                <img src="https://people.epfl.ch/private/common/photos/links/351048.jpg" alt="User Avatar">
+                <div class="user-details">
+                    <div class="user-name">Frédéric Pitteloud</div>
+                    <div class="user-id">351048</div>
+                </div>
+                <div class="dropdown-menu" id="user-dropdown">
+                    <a href="#" onclick="logout()">
+                        <img src="media/logout3.png" alt="Logout Icon">
+                        Déconnexion
+                    </a>
+                </div>
+            </div>
+            <div class="language-switcher">
+                <span class="active-lang">FR</span>
+                <span>|</span>
+                <span>EN</span>
+            </div>
+        </div>
+    </header>
+    <main class="container">
+        <section class="query-section">
+            <h2>Query and manage EPFL's Enterprise Architecture repository with Archie.</h2>
+            <form id="query-form">
+                <div class="form-group">
+                    <label for="query-input">You can talk to Archie using natural language:</label>
+                    <input type="text" id="query-input" name="query" class="form-control" value="This is my entry" placeholder="e.g., 'List all VPO SI open source applications'" required>
+                </div>
+                <button type="submit" id="submit-button">Submit Query</button>
+            </form>
+        </section>
+
+        <section class="results-section">
+            <h2>Results</h2>
+            <div id="loading-indicator" style="display: none;">
+                <p>Loading results...</p>
+                <!-- Optional: Add a spinner animation here -->
+            </div>
+            <div id="error-message" class="error" style="display: none;"></div>
+            <pre id="results-area">
+Results will appear here.
+            </pre>
+        </section>
+    </main>
+    <footer class="epfl-footer">
+        <div class="container" style="text-align: center; padding: 10px 0; background-color: #f7f7f7;">
+            <p>&copy; Archie, Your Enterprise Architecture Assistant</p>
+        </div>
+    </footer>
+    <script>
+        function toggleDropdown() {
+            const dropdown = document.getElementById('user-dropdown');
+            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function logout() {
+            window.location.href = "login.html";
+        }
+
+        // Close dropdown if clicked outside
+        document.addEventListener('click', function (event) {
+            const dropdown = document.getElementById('user-dropdown');
+            const userInfo = document.querySelector('.user-info');
+            if (!userInfo.contains(event.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+    </script>
+    <script src="script.js"></script>
+</body>
+</html>

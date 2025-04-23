@@ -1,0 +1,4 @@
+{
+    "github.copilot.chat.completionContext.typescript.mode": "on",
+    "editor.defaultFormatter": "hashicorp.terraform"
+}
