@@ -50,7 +50,7 @@ jobs:
             --sku Standard_LRS
 
           # Adding a small delay to ensure the storage account is fully provisioned
-          sleep 30
+          sleep 15
 
           # Get the storage account key
           STORAGE_KEY=$(az storage account keys list --resource-group $az_backend_rg_name --account-name $az_backend_sa_name --query '[0].value' -o tsv)
@@ -80,20 +80,45 @@ jobs:
           tenant-id:        ${{ secrets.AZURE_TENANT_ID }}
           subscription-id:  ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      # - name: Set Azure Subscription
-      #   run:  |
-      #     echo "Setting Azure Subscription to: ${{ secrets.AZURE_SUBSCRIPTION_ID }}"
-      #     az account set --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      # Step to install Terraform
-      - name: Install Terraform
+      - name: Set Terraform Environment Variables
         run: |
-          sudo apt-get update
-          sudo apt-get install -y wget unzip
-          wget https://releases.hashicorp.com/terraform/1.5.0/terraform_1.5.0_linux_amd64.zip
-          unzip terraform_1.5.0_linux_amd64.zip
-          sudo mv terraform /usr/local/bin/
-          terraform --version
+          echo "TF_VAR_az_client_id=${{ secrets.AZURE_CLIENT_ID }}" >> $GITHUB_ENV
+          echo "TF_VAR_az_tenant_id=${{ secrets.AZURE_TENANT_ID }}" >> $GITHUB_ENV
+          echo "TF_VAR_az_subscription_id=${{ secrets.AZURE_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
+          echo "TF_VAR_az_container_name=${{ env.ENVIRONMENT }}-bkd-iat-website-co" >> $GITHUB_ENV
+  
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+  
+      - name: Terraform Init
+        env:
+          ARM_CLIENT_ID:        ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID:  ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID:        ${{ secrets.AZURE_TENANT_ID }}
+          ENVIRONMENT:          ${{ github.ref_name }}
+          ARM_USE_OIDC: true
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ vars.AZURE_BKD_RGROUP_NAME }} \
+            -backend-config="storage_account_name=${{ vars.AZURE_BKD_SA_NAME }} \
+            -backend-config="container_name=${{ vars.AZURE_BKD_CONTAINER_NAME }} \
+            -backend-config="key=archie-${{ github.ref_name }}.tfstate" \
+            -var-file="${{ github.ref_name }}.tfvars"
+        working-directory: ./infra  # Update the working directory to the new infra folder
+  
+      - name: Terraform Apply
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_USE_OIDC: true
+          ENVIRONMENT: ${{ env.ENVIRONMENT }}
+          TF_LOG: DEBUG
+          TF_LOG_PATH: terraform.log
+        run: |
+          echo "Using environment: ${{ env.ENVIRONMENT }}"
+          terraform apply -var-file="${{ env.ENVIRONMENT }}.tfvars" -auto-approve
+        working-directory: ./infra  # Update the working directory to the new infra folder
 
       # Initialize and applyTerraform
       - name: Terraform Init and Apply
