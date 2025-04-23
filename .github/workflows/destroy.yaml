@@ -1,3 +1,4 @@
+# Destroy Azure Resources Workflow
 name: Destroy Environment
 
 on:
