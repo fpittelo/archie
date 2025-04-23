@@ -103,7 +103,7 @@ jobs:
             -backend-config="storage_account_name=${{ vars.AZURE_BKD_SA_NAME }} \
             -backend-config="container_name=${{ vars.AZURE_BKD_CONTAINER_NAME }} \
             -backend-config="key=archie-${{ github.ref_name }}.tfstate" \
-            -var-file="${{ github.ref_name }}.tfvars"
+        #   -var-file="${{ github.ref_name }}.tfvars"
         working-directory: ./infra  # Update the working directory to the new infra folder
   
       - name: Terraform Apply
