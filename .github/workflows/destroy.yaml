@@ -1,0 +1,49 @@
+name: Destroy Environment
+
+on:
+  push:
+    branches:
+      - destroy
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  destroy:
+    name: Destroy Backend
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }} # Use environment specified in workflow dispatch
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Login to Azure using OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Destroy Azure Resources
+        run: |
+          # Define variables for the backend resources
+          az_backend_rg_name="${{ vars.AZURE_RESOURCE_GROUP_NAME }}"
+          az_location="${{ vars.AZURE_LOCATION }}"
+          
+          # Get the storage account name
+          az_backend_sa_name=$(az storage account list --resource-group $az_backend_rg_name --query '[0].name' -o tsv)
+
+          # Delete storage account if it exists
+          if ! az storage account show --name $az_backend_sa_name --resource-group $az_backend_rg_name &> /dev/null; then
+            echo "Storage account $az_backend_sa_name does not exist in $az_backend_rg_name. Skipping deletion."
+          else
+            az storage account delete --name $az_backend_sa_name --resource-group $az_backend_rg_name --yes
+          fi
+
+          # Delete resource group if it exists
+          if ! az group show --name $az_backend_rg_name &> /dev/null; then
+            echo "Resource group $az_backend_rg_name does not exist. Skipping deletion."
+          else
+            az group delete --name $az_backend_rg_name --yes --no-wait
+          fi
