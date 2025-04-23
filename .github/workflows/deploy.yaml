@@ -99,10 +99,10 @@ jobs:
           ARM_USE_OIDC: true
         run: |
           terraform init \
-            -backend-config="resource_group_name=${{ vars.AZURE_BKD_RGROUP_NAME }} \
-            -backend-config="storage_account_name=${{ vars.AZURE_BKD_SA_NAME }} \
-            -backend-config="container_name=${{ vars.AZURE_BKD_CONTAINER_NAME }} \
-            -backend-config="key=archie-${{ github.ref_name }}.tfstate" \
+            -backend-config="resource_group_name=${{ vars.AZURE_BKD_RGROUP_NAME }}" \
+            -backend-config="storage_account_name=${{ vars.AZURE_BKD_SA_NAME }}" \
+            -backend-config="container_name=${{ vars.AZURE_BKD_CONTAINER_NAME }}" \
+            -backend-config="key=archie-${{ github.ref_name }}.tfstate"
         #   -var-file="${{ github.ref_name }}.tfvars"
         working-directory: ./infra  # Update the working directory to the new infra folder
   
@@ -121,7 +121,3 @@ jobs:
         working-directory: ./infra  # Update the working directory to the new infra folder
 
       # Initialize and applyTerraform
-      - name: Terraform Init and Apply
-        run: |          
-          terraform init
-          terraform apply -auto-approve -var="environment=${{ needs.backend.outputs.environment }}" -var="storage_account_name=${{ vars.AZURE_BKD_SA_NAME }}" -var="container_name=${{ vars.AZURE_BKD_CONTAINER_NAME }}"
