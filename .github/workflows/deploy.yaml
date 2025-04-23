@@ -85,11 +85,18 @@ jobs:
       #     echo "Setting Azure Subscription to: ${{ secrets.AZURE_SUBSCRIPTION_ID }}"
       #     az account set --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Terraform Init and Apply
+      # Step to install Terraform
+      - name: Install Terraform
         run: |
-          # Initialize Terraform
-          terraform init
+          sudo apt-get update
+          sudo apt-get install -y wget unzip
+          wget https://releases.hashicorp.com/terraform/1.5.0/terraform_1.5.0_linux_amd64.zip
+          unzip terraform_1.5.0_linux_amd64.zip
+          sudo mv terraform /usr/local/bin/
+          terraform --version
 
-          # Apply Terraform configuration (non-interactive)
+      # Initialize and applyTerraform
+      - name: Terraform Init and Apply
+        run: |          
+          terraform init
           terraform apply -auto-approve -var="environment=${{ needs.backend.outputs.environment }}" -var="storage_account_name=${{ vars.AZURE_BKD_SA_NAME }}" -var="container_name=${{ vars.AZURE_BKD_CONTAINER_NAME }}"
-          # Add any additional Terraform commands as needed
