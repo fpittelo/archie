@@ -1,0 +1,38 @@
+name: Deploy Environment
+
+on:
+  push:
+    branches:
+      - dev
+      - qa
+      - main
+
+permissions:
+  id-token: write  # Required for OIDC authentication
+  contents: read   # Default permission for accessing the repo
+
+jobs:
+  # Step 1: Bootstrap Backend Resources (if not already done)
+  backend:
+    name: Deploy Backend
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref_name }}  # Use the branch name as environment
+    outputs:
+      environment: ${{ steps.setenv.outputs.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Login to Azure using OIDC
+        uses: azure/login@v2
+        with:
+          client-id:        ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id:        ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id:  ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Create backend resources
+        run: |
+          # Define variables for the backend resources
+          az_backend_rg_name="${{ vars.AZURE_RESOURCE_GROUP_NAME }}"
+          az_backend_sa_name="${{ vars.AZURE_BACKEND_SA_NAME }}"
+          az_backend_container_name="${{ vars.AZURE_BACKEND_CONTAINER_NAME }}"      

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Archie AI</title>
+  <link rel="stylesheet" href="https://www.epfl.ch/css/epfl.css"> <!-- EPFL Theme -->
+  <link rel="icon" type="image/png" sizes="32x32" href="media/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="media/favicon-76.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="media/favicon-96.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="media/favicon-152.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="media/favicon-180.png">
+  <link rel="icon" href="media/favicon.ico" sizes="any" type="image/x-icon">
+  <link rel="manifest" href="media/site.webmanifest">
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f7f7f7;
+      margin: 0;
+      padding: 0;
+    }
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 20px;
+      background-color: #fff;
+      border-bottom: 1px solid #ddd;
+    }
+    .toolbar .logo-container {
+      display: flex;
+      align-items: center;
+    }
+    .toolbar .logo-container img {
+      height: 40px;
+      margin-right: 10px;
+    }
+    .toolbar .logo-container .app-name {
+      font-weight: bold;
+      font-size: 32px; /* Match index.html */
+      color: #000;
+    }
+    .toolbar .language-switcher {
+      display: flex;
+      align-items: center;
+      margin-left: auto; /* Push the language-switcher to the right */
+    }
+    .toolbar .language-switcher span {
+      cursor: pointer;
+      margin: 0 5px;
+    }
+    .toolbar .language-switcher .active-lang {
+      font-weight: bold;
+      color: #d52b1e; /* EPFL Red */
+    }
+    .gray-bar {
+      background-color: #ddd; /* Match the white area */
+      height: 2px; /* Thin bar */
+      margin-top: 10px; /* Add spacing below the toolbar content */
+    }
+    .login-container {
+      max-width: 400px;
+      margin: 100px auto;
+      padding: 20px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .login-container button {
+      background-color: #d52b1e; /* EPFL Red */
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      width: 100%;
+    }
+    .login-container button:hover {
+      background-color: #b2221a;
+    }
+    .login-failed {
+      color: red;
+      text-align: center;
+      margin-top: 10px;
+      display: none; /* Hidden by default */
+    }
+    .epfl-footer {
+      text-align: center;
+      padding: 10px 0;
+      background-color: #f7f7f7;
+    }
+  </style>
+</head>
+<body>
+  <header class="toolbar">
+    <div class="logo-container">
+      <img src="media/logo.png" alt="EPFL Logo">
+      <div class="app-name">Archie</div>
+    </div>
+    <div class="language-switcher">
+      <span class="active-lang">FR</span>
+      <span>|</span>
+      <span>EN</span>
+    </div>
+    <div class="gray-bar"></div>
+  </header>
+  <div class="login-container">
+    <form id="login-form">
+      <button type="button" onclick="authenticate()">Login With Your EPFL Account</button>
+    </form>
+    <p id="login-failed" class="login-failed">Login Failed</p>
+  </div>
+  <footer class="epfl-footer">
+    <div class="container">
+      <p>&copy; Archie, Your Enterprise Architecture Assistant</p>
+    </div>
+  </footer>
+  <script>
+    async function authenticate() {
+      try {
+        // Simulate OIDC/oAuth2 authentication with MS Entra ID
+        const response = await fetch('/auth/oidc', { method: 'POST' });
+        if (response.ok) {
+          window.location.href = 'index.html'; // Redirect to index.html on success
+        } else {
+          document.getElementById('login-failed').style.display = 'block'; // Show "Login Failed" on failure
+        }
+      } catch (error) {
+        document.getElementById('login-failed').style.display = 'block'; // Show "Login Failed" on error
+      }
+    }
+  </script>
+</body>
+</html>
