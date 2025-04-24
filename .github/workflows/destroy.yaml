@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   destroy_frontend:
-    name: Destroy Frontend
+    name: Destroy Resources
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment }} # Use environment specified in workflow dispatch
     steps:

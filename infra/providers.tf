@@ -5,7 +5,7 @@ terraform {
     resource_group_name  = var.backend_rg_name
     storage_account_name = var.backend_sa_name
     container_name       = var.backend_container_name
-    key                  = "archie-${terraform.workspace}.tfstate"
+    key                  = "terraform.tfstate"
     use_oidc             = true
   }
 
