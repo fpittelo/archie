@@ -11,9 +11,9 @@ resource "azurerm_static_web_app" "archie-webapp" {
   sku_size              = var.sku_size
   repository_url        = var.repository_url
   repository_branch     = var.branch_name
+  repository_token      = var.repository_token
 
   identity {
     type = "SystemAssigned"
   }
-
 }
