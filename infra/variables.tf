@@ -22,3 +22,23 @@ variable "backend_sa_name" {
 variable "backend_container_name" {
   type        = string
 }
+
+variable "swebapp_name" {
+  type = string
+}
+
+variable "branch_name" {
+  type = string
+}
+
+variable "repository_url" {
+  type = string
+}
+
+variable "sku_tier" {
+  type = string
+}
+
+variable "sku_size" {
+  type = string
+}

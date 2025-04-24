@@ -12,7 +12,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.0"  // Pin the provider version per best practices
+      version = "~> 4.2"  // Pin the provider version per best practices
     }
   }
 }
