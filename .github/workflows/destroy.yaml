@@ -36,7 +36,7 @@ jobs:
       - name: Destroy Azure Resources
         run: |
           # Define variables for the backend resources
-          az_backend_rg_name="${{ vars.AZURE_RESOURCE_GROUP_NAME }}"
+          az_backend_rg_name="${{ vars.AZURE_BKD_RGROUP_NAME }}"
           az_location="${{ vars.AZURE_LOCATION }}"
           
           # Get the storage account name

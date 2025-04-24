@@ -6,7 +6,7 @@ resource "azurerm_resource_group" "archie-dev" {
 resource "azurerm_static_web_app" "archie-webapp" {
   name                  = var.swebapp_name
   resource_group_name   = var.resource_group_name
-  location              = var.location
+  location              = var.location_eu
   sku_tier              = var.sku_tier
   sku_size              = var.sku_size
   repository_url        = var.repository_url

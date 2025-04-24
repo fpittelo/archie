@@ -11,6 +11,10 @@ variable "location" {
   type = string
 }
 
+variable "location_eu" {
+  type = string
+}
+
 variable "backend_rg_name" {
   type        = string
 }
@@ -34,7 +38,6 @@ variable "branch_name" {
 variable "repository_url" {
   type = string
 }
-
 variable "repository_token" {
   type        = string
   description = "The repository token for the static web app. This should be set via GitHub Actions secrets."
