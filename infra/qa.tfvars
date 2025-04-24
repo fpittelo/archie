@@ -1,0 +1,5 @@
+resource_group_name         = "archi-qa"
+location                    = "switzerlandnorth"
+backend_rg_name             = "archi-qa-backend"
+backend_sa_name             = "archiqabackend"
+backend_container_name      = "archiecontqa"

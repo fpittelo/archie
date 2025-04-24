@@ -1,6 +1,7 @@
 name: Deploy Environment
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - dev
@@ -33,9 +34,9 @@ jobs:
       - name: Create backend resources
         run: |
           # Define variables for the backend resources
-          az_backend_rg_name="${{ vars.AZURE_RESOURCE_GROUP_NAME }}"
-          az_backend_sa_name="${{ vars.AZURE_BACKEND_SA_NAME }}"
-          az_backend_container_name="${{ vars.AZURE_BACKEND_CONTAINER_NAME }}"
+          az_backend_rg_name="${{ vars.AZURE_BKD_RGROUP_NAME }}"
+          az_backend_sa_name="${{ vars.AZURE_BKD_SA_NAME }}"
+          az_backend_container_name="${{ vars.AZURE_BKD_CONTAINER_NAME }}"
           az_location="${{ vars.AZURE_LOCATION }}"
           
           # Create resource group if it doesn't exist
@@ -49,7 +50,7 @@ jobs:
             --sku Standard_LRS
 
           # Adding a small delay to ensure the storage account is fully provisioned
-          sleep 30
+          sleep 15
 
           # Get the storage account key
           STORAGE_KEY=$(az storage account keys list --resource-group $az_backend_rg_name --account-name $az_backend_sa_name --query '[0].value' -o tsv)
@@ -59,3 +60,61 @@ jobs:
             --name $az_backend_container_name \
             --account-name $az_backend_sa_name \
             --account-key $STORAGE_KEY
+  
+  # Main Terraform Deployment
+  deploy:
+    name: Deploy Environment
+    runs-on: ubuntu-latest
+    needs: backend  # Ensure backend resources are created first
+    environment: ${{ github.ref_name }}  # Use the branch name as environment
+    outputs:
+      environment: ${{ steps.setenv.outputs.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Login to Azure using OIDC
+        uses: azure/login@v2
+        with:
+          client-id:        ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id:        ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id:  ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set Terraform Environment Variables
+        run: |
+          echo "TF_VAR_az_client_id=${{ secrets.AZURE_CLIENT_ID }}" >> $GITHUB_ENV
+          echo "TF_VAR_az_tenant_id=${{ secrets.AZURE_TENANT_ID }}" >> $GITHUB_ENV
+          echo "TF_VAR_az_subscription_id=${{ secrets.AZURE_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
+          echo "TF_VAR_az_container_name=${{ vars.AZURE_BKD_CONTAINER_NAME }}" >> $GITHUB_ENV
+  
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+  
+      - name: Terraform Init
+        env:
+          ARM_CLIENT_ID:        ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID:  ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID:        ${{ secrets.AZURE_TENANT_ID }}
+          ENVIRONMENT:          ${{ github.ref_name }}
+          ARM_USE_OIDC: true
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ vars.AZURE_BKD_RGROUP_NAME }}" \
+            -backend-config="storage_account_name=${{ vars.AZURE_BKD_SA_NAME }}" \
+            -backend-config="container_name=${{ vars.AZURE_BKD_CONTAINER_NAME }}" \
+            -backend-config="key=archie-${{ github.ref_name }}.tfstate"
+        working-directory: ./infra  # Update the working directory to the new infra folder
+  
+      - name: Terraform Apply
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_USE_OIDC: true
+          ENVIRONMENT: ${{ github.ref_name }}
+        run: |
+          echo "Using environment: ${{ github.ref_name }}"
+          terraform apply -var-file="${{ github.ref_name }}.tfvars" -auto-approve
+        working-directory: ./infra  # Update the working directory to the new infra folder
+
+      # Initialize and applyTerraform
