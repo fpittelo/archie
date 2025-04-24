@@ -35,7 +35,7 @@ jobs:
         run: |
           # Define variables for the backend resources
           az_backend_rg_name="${{ vars.AZURE_BKD_RGROUP_NAME }}"
-          az_backend_sa_name="${{ vars.AZURE_BKD_SA_NAME }}$RANDOM$RANDOM$RANDOM"
+          az_backend_sa_name="${{ vars.AZURE_BKD_SA_NAME }}"
           az_backend_container_name="${{ vars.AZURE_BKD_CONTAINER_NAME }}"
           az_location="${{ vars.AZURE_LOCATION }}"
           
@@ -100,7 +100,7 @@ jobs:
         run: |
           terraform init \
             -backend-config="resource_group_name=${{ vars.AZURE_BKD_RGROUP_NAME }}" \
-            -backend-config="storage_account_name=${{ vars.AZURE_BKD_SA_NAME }}$RANDOM$RANDOM$RANDOM" \
+            -backend-config="storage_account_name=${{ vars.AZURE_BKD_SA_NAME }}" \
             -backend-config="container_name=${{ vars.AZURE_BKD_CONTAINER_NAME }}" \
             -backend-config="key=archie-${{ github.ref_name }}.tfstate"
         working-directory: ./infra  # Update the working directory to the new infra folder
