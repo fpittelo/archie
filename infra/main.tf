@@ -4,16 +4,11 @@ resource "azurerm_resource_group" "archie-dev" {
 }
 
 resource "azurerm_static_web_app" "archie-webapp" {
-  name                  = var.swebapp_name
-  resource_group_name   = var.resource_group_name
-  location              = var.location_eu
-  sku_tier              = var.sku_tier
-  sku_size              = var.sku_size
-  repository_url        = var.repository_url
-  repository_branch     = var.branch_name
-  repository_token      = var.repository_token
-
-  identity {
-    type = "SystemAssigned"
-  }
+  name                = var.swebapp_name
+  resource_group_name = var.resource_group_name
+  location            = var.location_eu
+  sku_tier            = var.sku_tier
+  repository_branch   = var.branch_name
+  repository_url      = var.repository_url
+  repository_token    = var.repository_token
 }
