@@ -35,11 +35,11 @@ jobs:
 
       - name: Destroy Azure Resources
         run: |
-          # Define variables for the backend resources
+          # Define variables for backend resources
           az_backend_rg_name="${{ vars.AZURE_BKD_RGROUP_NAME }}"
           az_location="${{ vars.AZURE_LOCATION }}"
           
-          # Get the storage account name
+          # Get the storage account name for backend
           az_backend_sa_name=$(az storage account list --resource-group $az_backend_rg_name --query '[0].name' -o tsv)
 
           # Delete storage account if it exists
@@ -49,9 +49,17 @@ jobs:
             az storage account delete --name $az_backend_sa_name --resource-group $az_backend_rg_name --yes
           fi
 
-          # Delete resource group if it exists
+          # Delete backend resource group if it exists
           if ! az group show --name $az_backend_rg_name &> /dev/null; then
             echo "Resource group $az_backend_rg_name does not exist. Skipping deletion."
           else
             az group delete --name $az_backend_rg_name --yes --no-wait
+          fi
+
+          # Delete static web app resource group
+          az_main_rg_name="${{ vars.AZURE_RESOURCE_GROUP_NAME }}"
+          if ! az group show --name $az_main_rg_name &> /dev/null; then
+            echo "Resource group $az_main_rg_name does not exist. Skipping deletion."
+          else
+            az group delete --name $az_main_rg_name --yes --no-wait
           fi
