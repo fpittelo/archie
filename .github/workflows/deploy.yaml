@@ -126,17 +126,35 @@ jobs:
           terraform apply -var-file="${{ github.ref_name }}.tfvars" -auto-approve
 
       - name: Get Terraform Outputs
-        working-directory: ./infra  # Update the working directory to the new infra folder
+        working-directory: ./infra # Update the working directory to the new infra folder
         id: tf_outputs
         run: |
-          # Use terraform output command to get specific outputs
-          api_key_val=$(terraform output -raw static_web_app_api_key)
-          hostname_val=$(terraform output -raw static_web_app_default_host_name)
-          # Use GitHub Actions step outputs format
-          echo "api_key=$api_key_val" >> $GITHUB_OUTPUT
-          echo "hostname=$hostname_val" >> $GITHUB_OUTPUT
+          echo "Attempting to get Terraform outputs..."
+          # Attempt to get outputs, redirect stderr to stdout to capture errors
+          api_key_val=$(terraform output -raw static_web_app_api_key 2>&1)
+          tf_output_exit_code=$? # Capture exit code of terraform output
 
-          # Mask the API key in logs
+          hostname_val=$(terraform output -raw static_web_app_default_host_name 2>&1)
+          # You might want to capture and check hostname_val's exit code too if it's critical
+
+          echo "Terraform output exit code for api_key: $tf_output_exit_code"
+          echo "Raw api_key_val from terraform output: $api_key_val" # Print what TF actually returned
+
+          # Check if the terraform output command failed OR if the output is empty/null
+          if [ $tf_output_exit_code -ne 0 ] || [ -z "$api_key_val" ] || [ "$api_key_val" == "null" ]; then
+            echo "::error::Failed to get valid static_web_app_api_key from Terraform output."
+            echo "Terraform output command returned exit code: $tf_output_exit_code"
+            echo "Output received: $api_key_val"
+            exit 1 # Fail the job
+          fi
+
+          echo "Successfully retrieved api_key."
+          # Set GitHub Actions step outputs
+          echo "api_key=$api_key_val" >> $GITHUB_OUTPUT
+          echo "hostname=$hostname_val" >> $GITHUB_OUTPUT # Assuming hostname retrieval is less critical or checked separately
+
+          # Mask the API key in logs *after* ensuring it's valid
+          echo "Masking retrieved API key."
           echo "::add-mask::$api_key_val"
   
   # Step 3: Build and Deploy Application to Static Web App
