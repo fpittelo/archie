@@ -154,27 +154,14 @@ jobs:
         id: swa_deploy
         uses: Azure/static-web-apps-deploy@v1
         with:
-          # Use the deployment token obtained from the Terraform output
           azure_static_web_apps_api_token: ${{ needs.deploy.outputs.deployment_token }}
           repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for GitHub Actions integrations
           action: "upload" # Specify the action, 'upload' is standard for deployment
-
-          ###### Repository/Build Configurations ######
-          # The root folder for your application code (where index.html is)
           app_location: "frontend"
-
-          # Optional: Path to your API code (if you have Azure Functions)
           api_location: "" # Set to empty string "" if no API
-
-          # Optional: The folder produced by the build process (if applicable)
           output_location: "" # Set to empty string "" if no build needed (like plain HTML)
-
-          ###### Deployment Configurations ######
-          # Optional: Skip building the app code if you have static files or build elsewhere
           skip_app_build: true
-
-          # Optional: Skip building the API code if you don't have an API or build elsewhere
-          skip_api_build: true
+          skip_api_build: true         
 
   # Step 4: Report Deployment URL
   report_url:
