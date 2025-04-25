@@ -154,14 +154,12 @@ jobs:
         id: swa_deploy
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ needs.deploy.outputs.deployment_token }}
-          repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for GitHub Actions integrations
-          action: "upload" # Specify the action, 'upload' is standard for deployment
-          app_location: "frontend"
-          api_location: "" # Set to empty string "" if no API
-          output_location: "" # Set to empty string "" if no build needed (like plain HTML)
-          skip_app_build: true
-          skip_api_build: true         
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_REPOSITORY_TOKEN }}
+          repo_token: ${{ secrets.AZURE_REPOSITORY_TOKEN }}
+          action: "upload"
+          app_location: "/frontend"  # Path to your frontend app
+          api_location: "/backend"  # Path to your backend API
+          output_location: "build"  # Path to the build output directory               
 
   # Step 4: Report Deployment URL
   report_url:
