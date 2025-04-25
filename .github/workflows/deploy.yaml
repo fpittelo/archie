@@ -7,6 +7,11 @@ on:
       - dev
       - qa
       - main
+    paths:
+      - infra/**  # Trigger on changes in the infra directory
+      - frontend/**  # Trigger on changes in the frontend directory
+      - backend/**  # Trigger on changes in the backend directory
+      - .github/workflows/deploy.yaml  # Trigger on changes to this workflow file
 
 permissions:
   id-token: write  # Required for OIDC authentication
@@ -20,7 +25,7 @@ jobs:
     environment: ${{ github.ref_name }}  # Use the branch name as environment
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Login to Azure using OIDC
         uses: azure/login@v2
@@ -65,9 +70,14 @@ jobs:
     runs-on: ubuntu-latest
     needs: backend  # Ensure backend resources are created first
     environment: ${{ github.ref_name }}  # Use the branch name as environment
+    
+    # define output variables for the backend job
+    outputs:
+      app_hostname: ${{ steps.tf_outputs.outputs.hostname }}
+    
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Login to Azure using OIDC
         uses: azure/login@v2
@@ -85,9 +95,10 @@ jobs:
           echo "TF_VAR_repository_token=${{ secrets.AZURE_REPOSITORY_TOKEN }}" >> $GITHUB_ENV
   
       - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v3
   
       - name: Terraform Init
+        working-directory: ./infra  # Update the working directory to the new infra folder
         env:
           ARM_CLIENT_ID:        ${{ secrets.AZURE_CLIENT_ID }}
           ARM_SUBSCRIPTION_ID:  ${{ secrets.AZURE_SUBSCRIPTION_ID }}
@@ -100,9 +111,9 @@ jobs:
             -backend-config="storage_account_name=${{ vars.AZURE_BKD_SA_NAME }}" \
             -backend-config="container_name=${{ vars.AZURE_BKD_CONTAINER_NAME }}" \
             -backend-config="key=archie-${{ github.ref_name }}.tfstate"
-        working-directory: ./infra  # Update the working directory to the new infra folder
   
       - name: Terraform Apply
+        working-directory: ./infra  # Update the working directory to the new infra folder
         env:
           ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
@@ -112,4 +123,90 @@ jobs:
         run: |
           echo "Using environment: ${{ github.ref_name }}"
           terraform apply -var-file="${{ github.ref_name }}.tfvars" -auto-approve
-        working-directory: ./infra  # Update the working directory to the new infra folder
+
+      - name: Get Terraform Outputs
+        working-directory: ./infra # Update the working directory to the new infra folder
+        id: tf_outputs
+        run: |
+          echo "Attempting to get Terraform outputs..."
+          # Get outputs (no need for error checking here if apply succeeded)
+          api_key_val=$(terraform output -raw static_web_app_api_key)
+          hostname_val=$(terraform output -raw static_web_app_default_host_name)
+
+          # Validate API Key just in case
+          if [ -z "$api_key_val" ]; then
+            echo "::error::Fetched static_web_app_api_key is empty!"
+            exit 1
+          fi
+
+          echo "Successfully retrieved api_key."
+          # Save API key to a file
+          echo "$api_key_val" > ./deployment_token.txt
+          echo "Saved API key to deployment_token.txt"
+
+          # Set only non-sensitive outputs for the job
+          echo "hostname=$hostname_val" >> $GITHUB_OUTPUT
+
+          # Mask the API key in logs
+          echo "Masking retrieved API key."
+          echo "::add-mask::$api_key_val"
+  
+      - name: Upload Deployment Token Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-token-artifact # Name for the artifact
+          path: ./infra/deployment_token.txt # Path to the file saved in previous step
+          retention-days: 1 # Optional: Adjust how long to keep the artifact
+
+  # Step 3: Build and Deploy Application to Static Web App
+  build_and_deploy_app:
+    name: Deploy App
+    runs-on: ubuntu-latest
+    needs: deploy # Run after infrastructure is deployed/updated
+    environment: ${{ github.ref_name }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download Deployment Token Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: deployment-token-artifact # Must match the upload name
+          # Optional: specify download path if needed, defaults to workspace root
+          # path: .
+
+      - name: Read Deployment Token from File
+        id: read_token # Give this step an ID
+        run: |
+          token_val=$(cat ./deployment_token.txt)
+          echo "Read token from file."
+          # Set the token as an output of *this step*
+          echo "deployment_token_step_output=$token_val" >> $GITHUB_OUTPUT
+          # Mask the token value read from the file
+          echo "::add-mask::$token_val"
+
+      - name: Deploy to Azure Static Web App
+        id: swa_deploy
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          # Use the output from the 'read_token' step within this job
+          azure_static_web_apps_api_token: ${{ steps.read_token.outputs.deployment_token_step_output }}
+          action: "upload"
+          app_location: "/frontend"
+          api_location: "/backend"
+          output_location: "build"           
+
+  # Step 4: Report Deployment URL
+  report_url:
+    name: Report
+    runs-on: ubuntu-latest
+    needs: [deploy, build_and_deploy_app] # Depends on both infra and app deployment
+    steps:
+      - name: Display Deployed URL
+        run: |
+          echo "------------------------------------------------------------------"
+          echo "✅ Application deployed successfully!"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "URL: https://${{ needs.deploy.outputs.app_hostname }}"
+          echo "------------------------------------------------------------------"
