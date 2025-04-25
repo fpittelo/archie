@@ -187,5 +187,5 @@ jobs:
           echo "------------------------------------------------------------------"
           echo "✅ Application deployed successfully!"
           echo "Branch: ${{ github.ref_name }}"
-          echo "URL: https://${{ needs.deploy_infra.outputs.app_hostname }}"
+          echo "URL: https://${{ needs.deploy.outputs.app_hostname }}"
           echo "------------------------------------------------------------------"
