@@ -15,7 +15,7 @@ resource "azurerm_linux_function_app" "archie-functionapp" {
   resource_group_name = var.resource_group_name
   location            = var.location_eu
 
-  service_plan_id = azurerm_app_service_plan.archie-appserviceplan.id
+  service_plan_id = azurerm_service_plan.archie-appserviceplan.id
 
   storage_account_name   = azurerm_storage_account.archie-storageaccount.name
   storage_account_access_key = azurerm_storage_account.archie-storageaccount.primary_access_key
@@ -31,21 +31,17 @@ resource "azurerm_linux_function_app" "archie-functionapp" {
   }
 
   depends_on = [
-    azurerm_app_service_plan.archie-appserviceplan,
+    azurerm_service_plan.archie-appserviceplan,
     azurerm_storage_account.archie-storageaccount
   ]
 }
 
-resource "azurerm_app_service_plan" "archie-appserviceplan" {
+resource "azurerm_service_plan" "archie-appserviceplan" {
   name                = "archie-appserviceplan"
   location            = var.location_eu
   resource_group_name = var.resource_group_name
-  kind                = "Linux"
-  reserved            = true
-  sku {
-    tier = "Consumption"
-    size = "Y1"
-  }
+  os_type             = "Linux"
+  sku_name            = "Y1"
 }
 
 resource "azurerm_storage_account" "archie-storageaccount" {
