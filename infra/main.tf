@@ -48,7 +48,7 @@ resource "azurerm_service_plan" "archie-appserviceplan" {
 
 resource "azurerm_storage_account" "archie-storageaccount" {
   depends_on               = [azurerm_resource_group.archie-dev]
-  name                     = "archiestorageaccount"
+  name                     = var.sa_name
   resource_group_name      = var.resource_group_name
   location                 = var.location_eu
   account_tier             = "Standard"

@@ -23,6 +23,10 @@ variable "backend_sa_name" {
   type        = string
 }
 
+variable "sa_name" {
+  type        = string
+}
+
 variable "backend_container_name" {
   type        = string
 }
