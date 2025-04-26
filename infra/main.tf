@@ -21,7 +21,7 @@ resource "azurerm_linux_function_app" "archie-functionapp" {
   storage_account_access_key = azurerm_storage_account.archie-storageaccount.primary_access_key
 
   site_config {
-    linux_fx_version = "python|${var.function_app_runtime}"
+  # linux_fx_version = "python|${var.function_app_runtime}"
   }
 
   app_settings = {
