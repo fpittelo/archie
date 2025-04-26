@@ -42,6 +42,7 @@ jobs:
           echo "TF_VAR_resource_group_name=${{ vars.AZURE_BKD_RGROUP_NAME }}" >> $GITHUB_ENV
           echo "TF_VAR_storage_account_name=${{ vars.AZURE_BKD_SA_NAME }}" >> $GITHUB_ENV
           echo "TF_VAR_repository_token=${{ secrets.AZURE_REPOSITORY_TOKEN }}" >> $GITHUB_ENV
+          echo "TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }}" # Pass the OpenAI API key
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
