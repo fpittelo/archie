@@ -59,14 +59,6 @@ variable "function_app_runtime" {
   type = string
 }
 
-variable "function_app_os" {
-  type = string
-}
-
-variable "function_app_plan" {
-  type = string
-}
-
 variable "openai_api_key" {
   type        = string
   description = "The OpenAI API key.  Must be set via Github secrets"
