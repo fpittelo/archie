@@ -121,6 +121,7 @@ jobs:
           ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           ARM_USE_OIDC: true
           ENVIRONMENT: ${{ github.ref_name }}
+          TF_LOG: DEBUG
         run: |
           echo "Using environment: ${{ github.ref_name }}"
           terraform apply -var-file="${{ github.ref_name }}.tfvars" -auto-approve
