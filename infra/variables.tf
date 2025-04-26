@@ -23,6 +23,10 @@ variable "backend_sa_name" {
   type        = string
 }
 
+variable "sa_name" {
+  type        = string
+}
+
 variable "backend_container_name" {
   type        = string
 }
@@ -49,4 +53,19 @@ variable "sku_tier" {
 
 variable "sku_size" {
   type = string
+}
+
+variable "function_app_name" {
+  type = string
+}
+
+variable "function_app_runtime" {
+  type    = string
+  default = "3.9"
+}
+
+variable "openai_api_key" {
+  type        = string
+  description = "The OpenAI API key.  Must be set via Github secrets"
+  sensitive   = true
 }
