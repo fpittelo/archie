@@ -59,10 +59,11 @@ jobs:
         working-directory: ./infra  # Use the new infra directory
         run: terraform destroy -var-file="${{ github.event.inputs.environment }}.tfvars" -auto-approve
         env:
+          ARM_USE_OIDC: true
           ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-          ARM_USE_OIDC: true
+          TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }} # Pass the OpenAI API key
 
   destroy:
     name: Destroy Backend
