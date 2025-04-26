@@ -56,7 +56,8 @@ variable "function_app_name" {
 }
 
 variable "function_app_runtime" {
-  type = string
+  type    = string
+  default = "3.9"
 }
 
 variable "openai_api_key" {
