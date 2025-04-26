@@ -32,11 +32,13 @@ resource "azurerm_linux_function_app" "archie-functionapp" {
 
   depends_on = [
     azurerm_service_plan.archie-appserviceplan,
-    azurerm_storage_account.archie-storageaccount
+    azurerm_storage_account.archie-storageaccount,
+    azurerm_resource_group.archie-dev
   ]
 }
 
 resource "azurerm_service_plan" "archie-appserviceplan" {
+  depends_on          = [azurerm_resource_group.archie-dev]
   name                = "archie-appserviceplan"
   location            = var.location_eu
   resource_group_name = var.resource_group_name
