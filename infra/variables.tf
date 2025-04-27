@@ -1,7 +1,6 @@
-#variable "environment" {
-# type    = map(string)
-# default = {}
-#}
+variable "environment" {
+  type    = string
+}
 
 variable "resource_group_name" {
   type = string
@@ -81,4 +80,13 @@ variable "az_tenant_id" {
 variable "az_object_id" {
   type        = string
   description = "The Object ID of the user or service principal. Must be set via Github secrets"
+}
+
+variable "tags" {
+  type = map(string)
+  default = {
+    owner       = "Fred"
+    project     = "archie"
+    costcenter  = "IT"
+  }
 }

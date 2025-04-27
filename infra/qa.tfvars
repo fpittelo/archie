@@ -15,3 +15,8 @@ function_app_runtime        = "3.9"
 az_keyvault_name            = "archiekeyvaultqa"
 az_tenant_id                = ""
 az_object_id                = ""
+tags                        = {
+  "owner"       = "Fred"
+  "project"     = "archie"
+  "costcenter"  = "IT"
+}
