@@ -79,3 +79,9 @@ variable "az_tenant_id" {
   description = "The Azure Tenant ID. Must be set via Github secrets"
   sensitive   = true
 }
+
+variable "az_object_id" {
+  type        = string
+  description = "The Object ID of the user or service principal. Must be set via Github secrets"
+  sensitive   = true
+}

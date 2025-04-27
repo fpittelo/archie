@@ -66,7 +66,7 @@ resource "azurerm_key_vault" "archie-keyvault" {
 
   access_policy {
     tenant_id = var.az_tenant_id
-    object_id = data.azurerm_client_config.current.object_id
+    object_id = var.az_object_id
 
     key_permissions = [
       "Get",
