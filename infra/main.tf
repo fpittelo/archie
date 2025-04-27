@@ -59,6 +59,7 @@ resource "azurerm_storage_account" "archie-storageaccount" {
 }
 
 resource "azurerm_key_vault" "archie-keyvault" {
+  depends_on                = [azurerm_resource_group.archie-dev]
   name                        = var.az_keyvault_name
   location                    = var.location_eu
   resource_group_name         = var.resource_group_name
