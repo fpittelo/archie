@@ -73,3 +73,9 @@ variable "openai_api_key" {
 variable "az_keyvault_name" {
   type = string
 }
+
+variable "az_tenant_id" {
+  type        = string
+  description = "The Azure Tenant ID. Must be set via Github secrets"
+  sensitive   = true
+}
