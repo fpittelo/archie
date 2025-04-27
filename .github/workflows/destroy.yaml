@@ -42,7 +42,7 @@ jobs:
           echo "TF_VAR_resource_group_name=${{ vars.AZURE_BKD_RGROUP_NAME }}" >> $GITHUB_ENV
           echo "TF_VAR_storage_account_name=${{ vars.AZURE_BKD_SA_NAME }}" >> $GITHUB_ENV
           echo "TF_VAR_repository_token=${{ secrets.AZURE_REPOSITORY_TOKEN }}" >> $GITHUB_ENV
-          echo "TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }}" # Pass the OpenAI API key
+          echo "TF_VAR_openai_api_key=${{ secrets.OPENAI_API_KEY }}" >> $GITHUB_ENV
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
@@ -87,6 +87,8 @@ jobs:
           # Define variables for backend resources
           az_backend_rg_name="${{ vars.AZURE_BKD_RGROUP_NAME }}"
           az_location="${{ vars.AZURE_LOCATION }}"
+          az_keyvault_name="${{ vars.AZURE_KEYVAULT_NAME }}"
+          az_resource_group_name="${{ vars.AZURE_RGROUP_NAME }}"
           
           # Get the storage account name for backend
           az_backend_sa_name=$(az storage account list --resource-group $az_backend_rg_name --query '[0].name' -o tsv)
@@ -96,6 +98,20 @@ jobs:
             echo "Storage account $az_backend_sa_name does not exist in $az_backend_rg_name. Skipping deletion."
           else
             az storage account delete --name $az_backend_sa_name --resource-group $az_backend_rg_name --yes
+          fi
+
+          # Delete Key Vault if it exists
+          if ! az keyvault show --name $az_keyvault_name --resource-group $az_resource_group_name &> /dev/null; then
+            echo "Key Vault $az_keyvault_name does not exist in $az_resource_group_name. Skipping deletion."
+          else
+            # Purge the Key Vault if purge protection is enabled
+            if az keyvault show --name $az_keyvault_name --resource-group $az_resource_group_name --query properties.enablePurgeProtection | grep -q true; then
+              echo "Purge protection is enabled for Key Vault $az_keyvault_name. Purging..."
+              az keyvault purge --name $az_keyvault_name --location $az_location
+            else
+              echo "Purge protection is not enabled for Key Vault $az_keyvault_name. Deleting..."
+              az keyvault delete --name $az_keyvault_name --resource-group $az_resource_group_name --yes --no-wait
+            fi
           fi
 
           # Delete backend resource group if it exists

@@ -69,3 +69,7 @@ variable "openai_api_key" {
   description = "The OpenAI API key.  Must be set via Github secrets"
   sensitive   = true
 }
+
+variable "az_keyvault_name" {
+  type = string
+}
