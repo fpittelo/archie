@@ -82,3 +82,9 @@ variable "az_object_id" {
   type        = string
   description = "The Object ID of the user or service principal. Must be set via Github secrets"
 }
+
+variable "tags" {
+  description = "Tags to apply to resources"
+  type        = map(string)
+  default     = {}  # Set default to empty map if appropriate
+}

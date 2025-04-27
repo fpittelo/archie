@@ -1,6 +1,7 @@
 resource "azurerm_resource_group" "archie-dev" {
   name                = var.resource_group_name
   location            = var.location
+  tags                = var.tags
 }
 
 resource "azurerm_static_web_app" "archie-webapp" {
@@ -8,12 +9,14 @@ resource "azurerm_static_web_app" "archie-webapp" {
   name                = var.swebapp_name
   resource_group_name = var.resource_group_name
   location            = var.location_eu
+  tags                = var.tags
 }
 
 resource "azurerm_linux_function_app" "archie-functionapp" {
   name                = var.function_app_name
   resource_group_name = var.resource_group_name
   location            = var.location_eu
+  tags                = var.tags
 
   service_plan_id = azurerm_service_plan.archie-appserviceplan.id
 
@@ -44,6 +47,7 @@ resource "azurerm_service_plan" "archie-appserviceplan" {
   resource_group_name = var.resource_group_name
   os_type             = "Linux"
   sku_name            = "Y1"
+  tags                = var.tags
 }
 
 resource "azurerm_storage_account" "archie-storageaccount" {
@@ -53,6 +57,7 @@ resource "azurerm_storage_account" "archie-storageaccount" {
   location                 = var.location_eu
   account_tier             = "Standard"
   account_replication_type = "LRS"
+  tags                     = var.tags
 }
 
 resource "azurerm_key_vault" "archie-keyvault" {
@@ -63,6 +68,7 @@ resource "azurerm_key_vault" "archie-keyvault" {
   sku_name                    = "standard"
   soft_delete_retention_days  = 7
   purge_protection_enabled    = true
+  tags                        = var.tags
 
   access_policy {
     tenant_id = var.az_tenant_id
