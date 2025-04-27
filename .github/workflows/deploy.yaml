@@ -121,10 +121,12 @@ jobs:
           ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-          ARM_USE_OIDC: true
           ENVIRONMENT: ${{ github.ref_name }}
+          ARM_USE_OIDC: true
         run: |
           echo "Using environment: ${{ github.ref_name }}"
+          echo "TF_VAR_az_object_id=${{ secrets.AZURE_OBJECT_ID }}" >> $GITHUB_ENV
+          echo "TF_VAR_az_tenant_id=${{ secrets.AZURE_TENANT_ID }}" >> $GITHUB_ENV
           terraform apply -var-file="${{ github.ref_name }}.tfvars" -auto-approve
 
       - name: Get Terraform Outputs
