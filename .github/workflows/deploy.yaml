@@ -95,6 +95,7 @@ jobs:
       # ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }} # Usually picked up automatically
       # ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }} # Usually picked up automatically
       ARM_USE_OIDC: true # Explicitly tell provider to use OIDC
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       # === Terraform Backend Config Variables ===
       # Define these here for use in the init step command line
