@@ -85,6 +85,6 @@ variable "az_object_id" {
 
 variable "tags" {
   description = "Tags to apply to resources"
-  type        = map(string)
+  type        = string
   default     = {}  # Set default to empty map if appropriate
 }
