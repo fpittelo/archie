@@ -41,6 +41,7 @@ jobs:
           az_backend_sa_name="${{ vars.AZURE_BKD_SA_NAME }}"
           az_backend_container_name="${{ vars.AZURE_BKD_CONTAINER_NAME }}"
           az_location="${{ vars.AZURE_LOCATION }}"
+          az_object_id="${{ secrets.AZURE_OBJECT_ID }}"
           
           # Create resource group if it doesn't exist
           az group create --name $az_backend_rg_name --location $az_location
@@ -94,6 +95,7 @@ jobs:
           echo "TF_VAR_az_container_name=${{ vars.AZURE_BKD_CONTAINER_NAME }}" >> $GITHUB_ENV
           echo "TF_VAR_repository_token=${{ secrets.AZURE_REPOSITORY_TOKEN }}" >> $GITHUB_ENV
           echo "TF_VAR_openai_api_key=${{ secrets.OPENAI_API_KEY }}" >> $GITHUB_ENV
+          echo "TF_VAR_az_object_id=${{ secrets.AZURE_OBJECT_ID }}" >> $GITHUB_ENV
   
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
