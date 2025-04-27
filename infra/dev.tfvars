@@ -15,9 +15,3 @@ function_app_runtime        = "3.9"
 az_keyvault_name            = "archiekeyvaultdev"
 az_tenant_id                = ""
 az_object_id                = ""
-tags  = {
-  env                       = "dev"
-  project                   = "Archie"
-  owner                     = "Fred"
-  department                = "IT"
-}
