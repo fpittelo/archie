@@ -32,7 +32,7 @@ jobs:
       # Keep vars needed by TF config (e.g., Key Vault definition read during destroy)
       TF_VAR_az_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
       TF_VAR_az_object_id: ${{ secrets.AZURE_OBJECT_ID }}
-      # TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }} # Only if needed by config during destroy
+      TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }} # Only if needed by config during destroy
 
       # === Azure Provider Auth ===
       ARM_USE_OIDC: true
