@@ -108,3 +108,16 @@ jobs:
           else
             echo "Resource group $az_backend_rg_name does not exist. Skipping deletion."
           fi
+
+      - name: Purge Key Vault if soft-deleted
+        run: |
+            KV_NAME="${{ vars.AZURE_KEYVAULT_NAME }}"
+            echo "Checking for soft-deleted Key Vault: $KV_NAME"
+            DELETED_KV=$(az keyvault list-deleted --query "[?name=='$KV_NAME'].name" -o tsv)
+            if [ ! -z "$DELETED_KV" ]; then
+              echo "Purging soft-deleted Key Vault: $KV_NAME"
+              az keyvault purge --name "$KV_NAME" --location "${{ vars.AZURE_LOCATION }}"
+              echo "Key Vault purged."
+            else
+              echo "No soft-deleted Key Vault found. Skipping purge."
+            fi
