@@ -149,23 +149,34 @@ jobs:
         id: tf_outputs
         run: |
           echo "Attempting to get Terraform outputs..."
-          api_key_val=$(terraform output -raw static_web_app_api_key)
-          hostname_val=$(terraform output -raw static_web_app_default_host_name)
+          # Capture outputs, redirecting stderr to prevent warnings polluting stdout
+          api_key_val=$(terraform output -raw static_web_app_api_key 2>/dev/null || echo "__ERROR__")
+          hostname_val=$(terraform output -raw static_web_app_default_host_name 2>/dev/null || echo "__ERROR__")
 
-          if [ -z "$api_key_val" ]; then
-            echo "::error::Fetched static_web_app_api_key is empty!"
+          # Check if capture failed (optional but safer)
+          if [[ "$api_key_val" == "__ERROR__" ]] || [[ -z "$api_key_val" ]]; then
+            echo "::error::Failed to get static_web_app_api_key output or it is empty!"
+            # Attempt to get full output for debugging
+            terraform output || true 
+            exit 1
+          fi
+           if [[ "$hostname_val" == "__ERROR__" ]] || [[ -z "$hostname_val" ]]; then
+            echo "::error::Failed to get static_web_app_default_host_name output or it is empty!"
+            # Attempt to get full output for debugging
+            terraform output || true 
             exit 1
           fi
 
           echo "Saving API key to deployment_token.txt"
           # Ensure saving to correct relative path if CWD is still ./infra
           echo "$api_key_val" > deployment_token.txt # Saves within ./infra
+          echo "::add-mask::$api_key_val" # Mask the key BEFORE setting output
 
+          # Set job output (ensure this is the only output command format printed)
           echo "Setting job outputs (hostname only)"
           echo "hostname=$hostname_val" >> $GITHUB_OUTPUT
 
-          echo "Masking retrieved API key."
-          echo "::add-mask::$api_key_val"
+          echo "Terraform outputs processed." # Add a final confirmation message
 
       - name: Upload Deployment Token Artifact
         uses: actions/upload-artifact@v4
