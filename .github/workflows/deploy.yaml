@@ -149,34 +149,37 @@ jobs:
         id: tf_outputs
         run: |
           echo "Attempting to get Terraform outputs..."
-          # Capture outputs, redirecting stderr to prevent warnings polluting stdout
+          # Define temp file for GitHub output command
+          GITHUB_OUTPUT_COMMAND_FILE=$(mktemp)
+
+          # Capture outputs (keep stderr redirect just in case, but it's likely ineffective for the warning)
           api_key_val=$(terraform output -raw static_web_app_api_key 2>/dev/null || echo "__ERROR__")
           hostname_val=$(terraform output -raw static_web_app_default_host_name 2>/dev/null || echo "__ERROR__")
 
-          # Check if capture failed (optional but safer)
+          # Check if capture failed
           if [[ "$api_key_val" == "__ERROR__" ]] || [[ -z "$api_key_val" ]]; then
             echo "::error::Failed to get static_web_app_api_key output or it is empty!"
-            # Attempt to get full output for debugging
-            terraform output || true 
+            terraform output || true
             exit 1
           fi
-           if [[ "$hostname_val" == "__ERROR__" ]] || [[ -z "$hostname_val" ]]; then
+          if [[ "$hostname_val" == "__ERROR__" ]] || [[ -z "$hostname_val" ]]; then
             echo "::error::Failed to get static_web_app_default_host_name output or it is empty!"
-            # Attempt to get full output for debugging
-            terraform output || true 
+            terraform output || true
             exit 1
           fi
 
           echo "Saving API key to deployment_token.txt"
-          # Ensure saving to correct relative path if CWD is still ./infra
-          echo "$api_key_val" > deployment_token.txt # Saves within ./infra
-          echo "::add-mask::$api_key_val" # Mask the key BEFORE setting output
+          echo "$api_key_val" > deployment_token.txt
+          echo "::add-mask::$api_key_val"
 
-          # Set job output (ensure this is the only output command format printed)
+          # Prepare the output command in the temporary file
           echo "Setting job outputs (hostname only)"
-          echo "hostname=$hostname_val" >> $GITHUB_OUTPUT
+          echo "hostname=$hostname_val" > $GITHUB_OUTPUT_COMMAND_FILE
 
-          echo "Terraform outputs processed." # Add a final confirmation message
+          echo "Terraform outputs processed."
+
+          # Write the output command file to the actual GITHUB_OUTPUT as the final step
+          cat $GITHUB_OUTPUT_COMMAND_FILE >> $GITHUB_OUTPUT
 
       - name: Upload Deployment Token Artifact
         uses: actions/upload-artifact@v4
