@@ -2,10 +2,6 @@
 
 terraform {
   backend "azurerm" {
-    resource_group_name  = var.backend_rg_name
-    storage_account_name = var.backend_sa_name
-    container_name       = var.backend_container_name
-    key                  = "terraform.tfstate"
     use_oidc             = true
   }
 
@@ -24,7 +20,8 @@ provider "azurerm" {
     }
     key_vault {
       purge_soft_delete_on_destroy    = true
-      recover_soft_deleted_key_vaults = false
+      recover_soft_deleted_key_vaults = true
     }
   }
+  use_oidc = true
 }

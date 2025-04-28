@@ -33,7 +33,7 @@ jobs:
           client-id:        ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id:        ${{ secrets.AZURE_TENANT_ID }}
           subscription-id:  ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
+      
       - name: Create backend resources
         run: |
           # Define variables for the backend resources
@@ -53,7 +53,7 @@ jobs:
             --sku Standard_LRS
 
           # Adding a small delay to ensure the storage account is fully provisioned
-          sleep 15
+          # sleep 15
 
           # Get the storage account key
           STORAGE_KEY=$(az storage account keys list --resource-group $az_backend_rg_name --account-name $az_backend_sa_name --query '[0].value' -o tsv)
@@ -75,6 +75,35 @@ jobs:
     outputs:
       app_hostname: ${{ steps.tf_outputs.outputs.hostname }}
     
+    # Define ALL environment variables needed for steps in this job here
+    env:
+      # === Terraform Input Variables ===
+      # Set the environment variable for Terraform tags/logic
+      TF_VAR_environment: ${{ github.ref_name }}
+      # Pass secrets/vars needed by Terraform config as TF_VAR_
+      TF_VAR_az_client_id: ${{ secrets.AZURE_CLIENT_ID }} # Often not needed in TF config if using OIDC auth for provider
+      TF_VAR_az_tenant_id: ${{ secrets.AZURE_TENANT_ID }} # Often not needed in TF config if using OIDC auth for provider
+      TF_VAR_az_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }} # Often not needed in TF config if using OIDC auth for provider
+      TF_VAR_az_container_name: ${{ vars.AZURE_BKD_CONTAINER_NAME }} # Needed for backend config? Check TF code.
+      TF_VAR_repository_token: ${{ secrets.AZURE_REPOSITORY_TOKEN }}
+      TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+      TF_VAR_az_object_id: ${{ secrets.AZURE_OBJECT_ID }} # Usually relates to RBAC assignments within TF
+
+      # === Azure Provider Auth (via OIDC - handled by azure/login) ===
+      # These might be redundant if azure/login works correctly, but ARM_USE_OIDC is often helpful
+      # ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }} # Usually picked up automatically
+      # ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }} # Usually picked up automatically
+      # ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }} # Usually picked up automatically
+      ARM_USE_OIDC: true # Explicitly tell provider to use OIDC
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # === Terraform Backend Config Variables ===
+      # Define these here for use in the init step command line
+      TF_BACKEND_RG_NAME: ${{ vars.AZURE_BKD_RGROUP_NAME }}
+      TF_BACKEND_SA_NAME: ${{ vars.AZURE_BKD_SA_NAME }}
+      TF_BACKEND_CONTAINER_NAME: ${{ vars.AZURE_BKD_CONTAINER_NAME }}
+      TF_BACKEND_KEY: archie-${{ github.ref_name }}.tfstate
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -85,79 +114,80 @@ jobs:
           client-id:        ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id:        ${{ secrets.AZURE_TENANT_ID }}
           subscription-id:  ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Set Terraform Environment Variables
-        run: |
-          echo "TF_VAR_az_client_id=${{ secrets.AZURE_CLIENT_ID }}" >> $GITHUB_ENV
-          echo "TF_VAR_az_tenant_id=${{ secrets.AZURE_TENANT_ID }}" >> $GITHUB_ENV
-          echo "TF_VAR_az_subscription_id=${{ secrets.AZURE_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
-          echo "TF_VAR_az_container_name=${{ vars.AZURE_BKD_CONTAINER_NAME }}" >> $GITHUB_ENV
-          echo "TF_VAR_repository_token=${{ secrets.AZURE_REPOSITORY_TOKEN }}" >> $GITHUB_ENV
-          echo "TF_VAR_openai_api_key=${{ secrets.OPENAI_API_KEY }}" >> $GITHUB_ENV
   
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
-  
+        with:
+          terraform_version: latest
+      
       - name: Terraform Init
         working-directory: ./infra  # Update the working directory to the new infra folder
-        env:
-          ARM_CLIENT_ID:        ${{ secrets.AZURE_CLIENT_ID }}
-          ARM_SUBSCRIPTION_ID:  ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          ARM_TENANT_ID:        ${{ secrets.AZURE_TENANT_ID }}
-          ENVIRONMENT:          ${{ github.ref_name }}
-          ARM_USE_OIDC: true
         run: |
           terraform init \
-            -backend-config="resource_group_name=${{ vars.AZURE_BKD_RGROUP_NAME }}" \
-            -backend-config="storage_account_name=${{ vars.AZURE_BKD_SA_NAME }}" \
-            -backend-config="container_name=${{ vars.AZURE_BKD_CONTAINER_NAME }}" \
-            -backend-config="key=archie-${{ github.ref_name }}.tfstate"
-  
+            -backend-config="resource_group_name=${{ env.TF_BACKEND_RG_NAME }}" \
+            -backend-config="storage_account_name=${{ env.TF_BACKEND_SA_NAME }}" \
+            -backend-config="container_name=${{ env.TF_BACKEND_CONTAINER_NAME }}" \
+            -backend-config="key=${{ env.TF_BACKEND_KEY }}"
+      
+      - name: Terraform Validate
+        working-directory: ./infra
+        run: terraform validate
+    
+      - name: Terraform Plan
+        working-directory: ./infra
+        id: plan # Give step an ID
+        run: terraform plan -var-file="${{ github.ref_name }}.tfvars" -out=tfplan  
+    
       - name: Terraform Apply
-        working-directory: ./infra  # Update the working directory to the new infra folder
-        env:
-          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-          ARM_USE_OIDC: true
-          ENVIRONMENT: ${{ github.ref_name }}
-        run: |
-          echo "Using environment: ${{ github.ref_name }}"
-          terraform apply -var-file="${{ github.ref_name }}.tfvars" -auto-approve
+        working-directory: ./infra
+        if: ${{ contains(fromJson('["dev", "qa", "main"]'), github.ref_name) }}
+        run: terraform apply -auto-approve tfplan
+        # Note: No need to set TF_VARs inside this run block
 
       - name: Get Terraform Outputs
-        working-directory: ./infra # Update the working directory to the new infra folder
+        working-directory: ./infra
         id: tf_outputs
         run: |
           echo "Attempting to get Terraform outputs..."
-          # Get outputs (no need for error checking here if apply succeeded)
-          api_key_val=$(terraform output -raw static_web_app_api_key)
-          hostname_val=$(terraform output -raw static_web_app_default_host_name)
+          # Define temp file for GitHub output command
+          GITHUB_OUTPUT_COMMAND_FILE=$(mktemp)
 
-          # Validate API Key just in case
-          if [ -z "$api_key_val" ]; then
-            echo "::error::Fetched static_web_app_api_key is empty!"
+          # Capture outputs (keep stderr redirect just in case, but it's likely ineffective for the warning)
+          api_key_val=$(terraform output -raw static_web_app_api_key 2>/dev/null || echo "__ERROR__")
+          hostname_val=$(terraform output -raw static_web_app_default_host_name 2>/dev/null || echo "__ERROR__")
+
+          # Check if capture failed
+          if [[ "$api_key_val" == "__ERROR__" ]] || [[ -z "$api_key_val" ]]; then
+            echo "::error::Failed to get static_web_app_api_key output or it is empty!"
+            terraform output || true
+            exit 1
+          fi
+          if [[ "$hostname_val" == "__ERROR__" ]] || [[ -z "$hostname_val" ]]; then
+            echo "::error::Failed to get static_web_app_default_host_name output or it is empty!"
+            terraform output || true
             exit 1
           fi
 
-          echo "Successfully retrieved api_key."
-          # Save API key to a file
-          echo "$api_key_val" > ./deployment_token.txt
-          echo "Saved API key to deployment_token.txt"
-
-          # Set only non-sensitive outputs for the job
-          echo "hostname=$hostname_val" >> $GITHUB_OUTPUT
-
-          # Mask the API key in logs
-          echo "Masking retrieved API key."
+          echo "Saving API key to deployment_token.txt"
+          echo "$api_key_val" > deployment_token.txt
           echo "::add-mask::$api_key_val"
-  
+
+          # Prepare the output command in the temporary file
+          echo "Setting job outputs (hostname only)"
+          echo "hostname=$hostname_val" > $GITHUB_OUTPUT_COMMAND_FILE
+
+          echo "Terraform outputs processed."
+
+          # Write the output command file to the actual GITHUB_OUTPUT as the final step
+          cat $GITHUB_OUTPUT_COMMAND_FILE >> $GITHUB_OUTPUT
+
       - name: Upload Deployment Token Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: deployment-token-artifact # Name for the artifact
-          path: ./infra/deployment_token.txt # Path to the file saved in previous step
-          retention-days: 1 # Optional: Adjust how long to keep the artifact
+          name: deployment-token-artifact
+          # Path relative to the workspace root, so specify infra
+          path: ./infra/deployment_token.txt
+          retention-days: 1
 
   # Step 3: Build and Deploy Application to Static Web App
   build_and_deploy_app:
@@ -173,30 +203,24 @@ jobs:
       - name: Download Deployment Token Artifact
         uses: actions/download-artifact@v4
         with:
-          name: deployment-token-artifact # Must match the upload name
-          # Optional: specify download path if needed, defaults to workspace root
-          # path: .
+          name: deployment-token-artifact
 
       - name: Read Deployment Token from File
-        id: read_token # Give this step an ID
+        id: read_token
         run: |
-          token_val=$(cat ./deployment_token.txt)
-          echo "Read token from file."
-          # Set the token as an output of *this step*
-          echo "deployment_token_step_output=$token_val" >> $GITHUB_OUTPUT
-          # Mask the token value read from the file
+          token_val=$(cat ./deployment_token.txt) # It's now at the root
           echo "::add-mask::$token_val"
-
+          echo "deployment_token_step_output=$token_val" >> $GITHUB_OUTPUT
+  
       - name: Deploy to Azure Static Web App
         id: swa_deploy
         uses: Azure/static-web-apps-deploy@v1
         with:
-          # Use the output from the 'read_token' step within this job
           azure_static_web_apps_api_token: ${{ steps.read_token.outputs.deployment_token_step_output }}
           action: "upload"
           app_location: "/frontend"
           api_location: "/backend"
-          output_location: "build"           
+          output_location: "build"          
 
   # Step 4: Report Deployment URL
   report_url:

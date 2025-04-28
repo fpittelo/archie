@@ -12,3 +12,9 @@ sku_tier                    = "Standard"
 sku_size                    = "Standard"
 function_app_name           = "archiemcpmain"
 function_app_runtime        = "3.9"
+az_keyvault_name            = "archiekeyvaultdev"
+tags                        = {
+  "owner"       = "Fred"
+  "project"     = "archie"
+  "costcenter"  = "IT"
+}

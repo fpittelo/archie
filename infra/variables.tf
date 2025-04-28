@@ -1,6 +1,5 @@
 variable "environment" {
-  type    = map(string)
-  default = {}
+  type    = string
 }
 
 variable "resource_group_name" {
@@ -68,4 +67,26 @@ variable "openai_api_key" {
   type        = string
   description = "The OpenAI API key.  Must be set via Github secrets"
   sensitive   = true
+}
+
+variable "az_keyvault_name" {
+  type = string
+}
+
+variable "az_tenant_id" {
+  type        = string
+}
+
+variable "az_object_id" {
+  type        = string
+  description = "The Object ID of the user or service principal. Must be set via Github secrets"
+}
+
+variable "tags" {
+  type = map(string)
+  default = {
+    owner       = "Fred"
+    project     = "archie"
+    costcenter  = "IT"
+  }
 }

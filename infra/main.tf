@@ -1,6 +1,7 @@
 resource "azurerm_resource_group" "archie-dev" {
   name                = var.resource_group_name
   location            = var.location
+  tags                = var.tags
 }
 
 resource "azurerm_static_web_app" "archie-webapp" {
@@ -8,12 +9,14 @@ resource "azurerm_static_web_app" "archie-webapp" {
   name                = var.swebapp_name
   resource_group_name = var.resource_group_name
   location            = var.location_eu
+  tags                = var.tags
 }
 
 resource "azurerm_linux_function_app" "archie-functionapp" {
   name                = var.function_app_name
   resource_group_name = var.resource_group_name
   location            = var.location_eu
+
 
   service_plan_id = azurerm_service_plan.archie-appserviceplan.id
 
@@ -53,6 +56,56 @@ resource "azurerm_storage_account" "archie-storageaccount" {
   location                 = var.location_eu
   account_tier             = "Standard"
   account_replication_type = "LRS"
+}
+
+resource "azurerm_key_vault" "archie-keyvault" {
+  depends_on                = [azurerm_resource_group.archie-dev]
+  name                        = var.az_keyvault_name
+  location                    = var.location_eu
+  resource_group_name         = var.resource_group_name
+  tenant_id                   = var.az_tenant_id
+  sku_name                    = "standard"
+  soft_delete_retention_days  = 7
+  purge_protection_enabled    = true
+
+
+  access_policy {
+    tenant_id = var.az_tenant_id
+    object_id = var.az_object_id
+
+    key_permissions = [
+      "Get",
+      "List",
+      "Create",
+      "Update",
+      "Delete",
+      "Recover",
+      "Backup",
+      "Restore",
+      "Purge",
+    ]
+
+    secret_permissions = [
+      "Get",
+      "List",
+      "Set",
+      "Delete",
+      "Recover",
+      "Backup",
+      "Restore",
+      "Purge",
+    ]
+
+    storage_permissions = [
+      "Get",
+      "List",
+      "Delete",
+      "Recover",
+      "Backup",
+      "Restore",
+      "Purge",
+    ]
+  }
 }
 
 output "static_web_app_api_key" {
