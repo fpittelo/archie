@@ -140,7 +140,7 @@ jobs:
     
       - name: Terraform Apply
         working-directory: ./infra
-        if: github.ref_name == 'dev'
+        if: ${{ contains(fromJson('["dev", "qa", "main"]'), github.ref_name) }}
         run: terraform apply -auto-approve tfplan
         # Note: No need to set TF_VARs inside this run block
 
