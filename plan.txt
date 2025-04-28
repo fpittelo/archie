@@ -1,17 +1,18 @@
 # EPFL ADOIT-OpenAI Integration Project Roadmap
 
-**Overall Project Goal:** Develop an intelligent assistant for interacting with and populating the EPFL ADOIT architecture repository using OpenAI, leveraging EPFL's existing Azure, Entra ID, and GitHub infrastructure.
+**Overall Project Goal:** Develop an intelligent assistant for interacting with and populating the EPFL ADOIT architecture repository using OpenAI, leveraging EPFL's existing Azure, Entra ID, and GitHub infrastructure. The application will be referred to as "Archie".
 
 ## Phases and Milestones:
 
 ### Phase 1: Foundation and MVP (Minimum Viable Product) - "Find Editors"
 
 *   **Milestone 1: Environment Setup and Core Components (Weeks 1-3)**
-    *   [ ] Set up Azure resources: Azure Functions (for MCP Server), Azure Static Web App (for UI), Azure Key Vault.
+    *   [v] Set up Azure resources: Azure Functions (for MCP Server), Azure Static Web App (for UI), Azure Key Vault.
     *   [x] Configure GitHub repository and initial CI/CD pipeline (basic linting, formatting, deployment to staging environment).
     *   [x] Set up developer workstations (Python environment, necessary libraries, IDE configuration).
-    *   [ ] Register the "ADOIT AI Assistant" web application in EPFL Entra ID and configure ADOIT for OIDC delegated permissions (in collaboration with ADOIT administrators).
-    *   [ ] Verify basic connectivity: UI can authenticate users via Entra ID, Azure Functions can be triggered.
+    *   [v] Register the "Archie AI" web application in EPFL Entra ID and configure ADOIT for OIDC delegated permissions (in collaboration with ADOIT administrators).
+    *   [v] Verify basic connectivity: UI can authenticate users via Entra ID, Azure Functions can be triggered.
+    *   [v] **Early ADOIT API Deep Dive:** Dedicate time to investigate the ADOIT API's capabilities and limitations, especially for write operations. Confirm feasibility using intended OIDC delegated permissions.
     *   **Deliverables:**
         *   Working Azure environment with core services.
         *   Basic CI/CD pipeline in place.
@@ -30,6 +31,8 @@
         *   [ ] Placeholder for ADOIT API interaction (no actual API calls yet).
         *   [ ] Implement "Editor Finder Agent" as a module.
     *   [ ] Implement logging (to Azure Application Insights).
+    *   [ ] **Explicit Error Handling Strategy (Basic):** Define a basic error handling strategy for scenarios like ADOIT downtime, OpenAI errors, API call failures, and data parsing issues.
+    *   [ ] **Data Flow Visualization:** Create a diagram illustrating the flow of data and authentication tokens between the User, UI (Static Web App), Entra ID, MCP Server (Azure Functions), ADOIT API, and Azure OpenAI API.
     *   **Deliverables:**
         *   Functional, but very basic, UI.
         *   Skeleton MCP Server with request handling and logging.
@@ -40,6 +43,7 @@
         *   [ ] Fetch the list of applications from ADOIT (to populate the UI dropdown).
         *   [ ] Retrieve application details (name, description) based on selected application ID.
     *   [ ] Use the delegated access token from the UI for ADOIT API calls.
+    *   [ ] **Integrated Testing:** Include unit and integration testing tasks for the ADOIT client module.
     *   **Deliverables:**
         *   UI dropdown populated with real application data from ADOIT.
         *   MCP Server can retrieve application details from ADOIT.
@@ -50,6 +54,7 @@
     *   [ ] Send the prompt to the OpenAI API.
     *   [ ] Parse the OpenAI response (JSON).
     *   [ ] Handle potential errors from OpenAI.
+    *   [ ] **Integrated Testing:** Include unit and integration testing tasks for the OpenAI interaction logic.
     *   **Deliverables:**
         *   MCP Server can send requests to OpenAI and process responses.
         *   Functional "Find Editors" logic (but without writing to ADOIT yet).
@@ -60,6 +65,7 @@
         *   [ ] Create relationships between applications and editors.
     *   [ ] Integrate the write logic into the "Editor Finder Agent."
     *   [ ] Thorough testing of the entire "Find Editors" flow.
+        *   [ ] **Integrated Testing:** End-to-end testing of the "Find Editors" flow.
     *   [ ] Deploy to a production environment.
     *   **Deliverables:**
         *   **MVP Complete:** A fully functional "Find Editors" feature, allowing users to find and add editors to applications in ADOIT via the OpenAI-powered assistant.
@@ -73,8 +79,9 @@
     *   [ ] Identify and prioritize additional use cases (e.g., identifying application dependencies, finding business owners, suggesting ArchiMate elements).
     *   [ ] Develop and implement new agents for each use case, following the pattern established in Phase 1 (UI update, MCP Server logic, prompt engineering, ADOIT API interaction).
         *   [ ] Add new agents to the MCP.
+    *   [ ] **Agent Management/Routing:** Define how the MCP Server will manage and route requests to the correct agent (conditional logic or dynamic registration/routing mechanism).
     *   **Deliverables:**
-        *   New features added to the "ADOIT AI Assistant," expanding its capabilities.
+        *   New features added to the "Archie AI Assistant," expanding its capabilities.
 
 *   **Milestone 7: Enhanced Prompt Engineering and Context Management (Weeks 21-25)**
     *   [ ] Refine prompts for existing use cases based on user feedback and performance analysis.
@@ -101,7 +108,7 @@
     *   [ ] Set up alerts in case of anomalies
     *   **Deliverables:**
         *   Stable, performant, and secure integration.
-* **Milestone 10: Fine Tuning (Future)**
+*   **Milestone 10: Fine Tuning (Future)**
     *   [ ] Gather enough examples
     *   [ ] Fine tuning of the model
     *   **Deliverables:**
