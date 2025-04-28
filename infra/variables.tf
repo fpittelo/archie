@@ -1,6 +1,5 @@
 variable "environment" {
-  type    = map(string)
-  default = {}
+  type    = string
 }
 
 variable "resource_group_name" {
@@ -84,7 +83,10 @@ variable "az_object_id" {
 }
 
 variable "tags" {
-  description = "Tags to apply to resources"
-  type        = map(string)
-  default     = {}  # Set default to empty map if appropriate
+  type = map(string)
+  default = {
+    owner       = "Fred"
+    project     = "archie"
+    costcenter  = "IT"
+  }
 }
