@@ -9,7 +9,7 @@ resource "azuread_application" "archie_app" {
   owners = [var.az_object_id]
 
   # Configure for Single Page Application (SPA) using Auth Code Flow with PKCE
-  spa {
+  single_page_application {
     # Redirect URIs need the default hostname of the Static Web App
     # Ensure 'archie_swa' matches the name of your azurerm_static_web_app resource
     # This creates an implicit dependency on the SWA being defined first or in the same plan
@@ -44,10 +44,10 @@ resource "azuread_application" "archie_app" {
 
 # Required: Create the Service Principal for the Application Registration
 resource "azuread_service_principal" "archie_sp" {
-  application_id = azuread_application.archie_app.application_id
-  owners         = [var.az_object_id] # Assign owner
+  # application_id = azuread_application.archie_app.application_id # Remove/Comment out this line
+  client_id      = azuread_application.archie_app.application_id # Add this line (using the application's ID)
+  owners         = [var.az_object_id]
   tags           = ["terraform", "archie", var.environment]
-  # app_role_assignment_required = false # Default is false. Set true if you only want explicitly assigned users/groups to sign in.
 }
 
 # --- Optional: If your backend Function App needs its OWN secret ---
