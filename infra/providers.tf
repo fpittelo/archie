@@ -10,6 +10,10 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "~> 4.2"  // Pin the provider version per best practices
     }
+    azuread = {
+      source  = "hashicorp/azuread"
+      version = "~> 3.3"  // Pin the provider version per best practices
+    }
   }
 }
 
@@ -23,5 +27,9 @@ provider "azurerm" {
       recover_soft_deleted_key_vaults = true
     }
   }
+  use_oidc = true
+}
+
+provider "azuread" {
   use_oidc = true
 }
