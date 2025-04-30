@@ -74,3 +74,29 @@ body {
   padding: 10px 0;
   background-color: #f7f7f7;
 }
+
+/* Style for the EPFL button */
+.epfl-button {
+  text-decoration: none;
+  display: block;
+  width: 200px;
+  margin: 20px auto;
+  padding: 10px 20px;
+  background-color: #e34a54;
+  color: white;
+  border-radius: 5px;
+  text-align: center;
+  border: none;
+  box-shadow: none;
+  outline: none;
+  text-shadow: none;
+  border-bottom: none;
+  position: relative; /* Required for positioning the ::before element */
+  box-sizing: border-box; /* Include padding and border in the element's total width and height - might need to be removed for compatibility with IE6/7 */
+}
+
+.epfl-button:hover,
+.epfl-button:focus {
+  outline: none;
+  text-decoration: none;
+}
