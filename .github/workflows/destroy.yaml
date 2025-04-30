@@ -31,6 +31,7 @@ jobs:
       TF_VAR_environment: ${{ github.event.inputs.environment }} # Pass selected environment
       # Keep vars needed by TF config (e.g., Key Vault definition read during destroy)
       TF_VAR_az_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+      TF_VAR_az_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       TF_VAR_az_object_id: ${{ secrets.AZURE_OBJECT_ID }}
       TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }} # Only if needed by config during destroy
       TF_VAR_repository_token: ${{ secrets.AZURE_REPOSITORY_TOKEN }} # Make sure AZURE_REPOSITORY_TOKEN is the correct secret name
