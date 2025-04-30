@@ -13,7 +13,7 @@ resource "azuread_application" "archie_app" {
     # Redirect URIs need the default hostname of the Static Web App
     # Ensure 'archie_swa' matches the name of your azurerm_static_web_app resource
     # This creates an implicit dependency on the SWA being defined first or in the same plan
-    redirect_uris = ["https://${azurerm_static_web_app.archie_swa.default_host_name}/.auth/login/aad/callback"]
+    redirect_uris = ["https://${azurerm_static_web_app.archie-webapp.default_host_name}/.auth/login/aad/callback"]
   }
 
   # Optional: Define API permissions if Archie backend needs to call Graph API or ADOIT API (if secured by Entra ID)
