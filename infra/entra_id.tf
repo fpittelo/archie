@@ -45,7 +45,7 @@ resource "azuread_application" "archie_app" {
 # Required: Create the Service Principal for the Application Registration
 resource "azuread_service_principal" "archie_sp" {
   # application_id = azuread_application.archie_app.application_id # Remove/Comment out this line
-  client_id      = azuread_application.archie_app.application_id # Add this line (using the application's ID)
+  client_id      = azuread_application.archie_app.client_id # Use client_id attribute here
   owners         = [var.az_object_id]
   tags           = ["terraform", "archie", var.environment]
 }
@@ -77,7 +77,7 @@ resource "azuread_service_principal" "archie_sp" {
 
 # Output the Application (Client) ID - useful for configuring other resources
 output "archie_application_client_id" {
-  value       = azuread_application.archie_app.application_id
+  value       = azuread_application.archie_app.client_id # Use client_id attribute here
   description = "The Application (Client) ID for the Archie Entra ID application."
 }
 
@@ -89,7 +89,7 @@ output "archie_service_principal_id" {
 
 # Optional: Output the Tenant ID (though it's usually known)
 output "archie_tenant_id" {
-  value       = azuread_application.archie_app.tenant_id
+  value       = var.az_tenant_id # Output the variable directly
   description = "The Tenant ID where Archie application is registered."
 }
 
