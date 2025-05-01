@@ -13,6 +13,7 @@ sku_size                    = "Standard"
 function_app_name           = "archiemcpqa"
 function_app_runtime        = "3.9"
 az_keyvault_name            = "archiekeyvaultqa"
+app_insights_name           = "archie-appinsights-qa"
 tags                        = {
   "owner"       = "Fred"
   "project"     = "archie"

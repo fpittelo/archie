@@ -12,11 +12,18 @@ resource "azurerm_static_web_app" "archie-webapp" {
   tags                = var.tags
 }
 
+resource "azurerm_application_insights" "archie-appinsights" {
+  name                = var.app_insights_name
+  location            = var.location_eu # Often best to keep App Insights close to the app
+  resource_group_name = azurerm_resource_group.archie-dev.name
+  application_type    = "web" # Standard type for web apps and functions
+  tags                = var.tags
+}
+
 resource "azurerm_linux_function_app" "archie-functionapp" {
   name                = var.function_app_name
   resource_group_name = var.resource_group_name
   location            = var.location_eu
-
 
   service_plan_id = azurerm_service_plan.archie-appserviceplan.id
 
@@ -30,10 +37,13 @@ resource "azurerm_linux_function_app" "archie-functionapp" {
   app_settings = {
     "FUNCTIONS_WORKER_RUNTIME" = "python"
     "OPENAI_API_KEY"           = var.openai_api_key # Use the variable to get the API key
-    "AzureWebJobsStorage"      = azurerm_storage_account.archie-storageaccount.primary_connection_string
+    "AzureWebJobsStorage"      = azurerm_storage_account.archie-storageaccount.primary_connection_string,
+    # Link Application Insights
+    "APPINSIGHTS_INSTRUMENTATIONKEY" = azurerm_application_insights.archie-appinsights.instrumentation_key
   }
 
   depends_on = [
+    azurerm_application_insights.archie-appinsights, # Ensure App Insights exists first
     azurerm_service_plan.archie-appserviceplan,
     azurerm_storage_account.archie-storageaccount,
     azurerm_resource_group.archie-dev

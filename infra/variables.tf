@@ -66,6 +66,11 @@ variable "function_app_runtime" {
   default = "3.9"
 }
 
+variable "app_insights_name" {
+  type        = string
+  description = "The name for the Application Insights instance."
+}
+
 variable "openai_api_key" {
   type        = string
   description = "The OpenAI API key. Must be set via Github secrets"
