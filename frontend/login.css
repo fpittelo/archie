@@ -92,6 +92,29 @@ body {
   text-shadow: none;
   border-bottom: none;
   position: relative; /* Required for positioning the ::before element */
+/* Add these styles to your login.css */
+.footer-content {
+  text-align: center;
+  padding: 10px 0;
+  background-color: #f7f7f7; /* Or inherit from .epfl-footer if appropriate */
+}
+
+/* You might already have styles for .epfl-footer, adjust as needed */
+.epfl-footer {
+ /* Potential existing styles */
+ /* Ensure background isn't overridden if set here */
+}
+
+/* Optional: Style for the language switcher if you plan to make it functional */
+.language-switcher span {
+  cursor: pointer; /* Indicate interactivity */
+  padding: 0 5px;
+}
+
+.language-switcher .active-lang {
+  font-weight: bold;
+  cursor: default; /* No action needed for the active one */
+}
   box-sizing: border-box; /* Include padding and border in the element's total width and height - might need to be removed for compatibility with IE6/7 */
 }
 
