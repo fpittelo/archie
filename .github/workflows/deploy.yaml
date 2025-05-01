@@ -218,8 +218,8 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ steps.read_token.outputs.deployment_token_step_output }}
           action: "upload"
-          app_location: "/frontend"
-          api_location: "/backend"
+          app_location: "/frontend" # Root of your frontend app
+          api_location: "/backend/ArchieMCPFunctionApp" # Root of your Azure Functions code
           output_location: "build"          
 
   # Step 4: Report Deployment URL
