@@ -2,31 +2,8 @@ import logging
 import os
 import azure.functions as func
 from openai import AzureOpenAI # Use AzureOpenAI if deploying to Azure with managed identity or key in settings
-# from openai import OpenAI # Or use standard OpenAI if preferred
+from openai import OpenAI # Use standard OpenAI client if using api.openai.com
 
-# --- OpenAI Configuration ---
-# It's recommended to use environment variables for API keys and endpoints
-openai_api_key = os.environ.get("OPENAI_API_KEY")
-# You might need to set OPENAI_API_VERSION and AZURE_OPENAI_ENDPOINT as environment variables too
-# depending on your OpenAI setup (Azure OpenAI vs standard OpenAI)
-
-# Initialize the OpenAI client
-# Ensure your Function App has the OPENAI_API_KEY application setting configured
-if not openai_api_key:
-    logging.error("OpenAI API key not found in environment variables.")
-    # Handle the error appropriately - maybe return an error response
-    # For now, we'll let it fail later if the key is missing
-
-# Example using AzureOpenAI (adjust if using standard OpenAI)
-# client = AzureOpenAI(
-#     api_key=openai_api_key,
-#     # api_version="YOUR_API_VERSION", # e.g., "2023-07-01-preview" - Set via env var preferably
-#     # azure_endpoint="YOUR_AZURE_OPENAI_ENDPOINT" # Set via env var preferably
-# )
-# --- OR ---
-# Example using standard OpenAI client
-client = AzureOpenAI(api_key=openai_api_key) # Assuming standard OpenAI for simplicity now
-# --- End OpenAI Configuration ---
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
     """
@@ -49,11 +26,28 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     if query:
         logging.info(f"Received query: {query}")
 
+        # --- OpenAI Configuration & Client Initialization ---
+        openai_api_key = os.environ.get("OPENAI_API_KEY")
+
         if not openai_api_key:
              logging.error("OpenAI API key is not configured.")
              return func.HttpResponse("Server configuration error: OpenAI API key missing.", status_code=500)
 
         try:
+            # Initialize the client *inside* the function call
+            # Use the correct client based on your service (OpenAI vs Azure OpenAI)
+
+            # Option 1: Standard OpenAI API
+            client = OpenAI(api_key=openai_api_key)
+
+            # Option 2: Azure OpenAI Service (Requires additional settings)
+            # azure_endpoint = os.environ.get("AZURE_OPENAI_ENDPOINT")
+            # api_version = os.environ.get("AZURE_OPENAI_API_VERSION") # e.g., "2023-12-01-preview"
+            # if not azure_endpoint or not api_version:
+            #     logging.error("Azure OpenAI endpoint or API version not configured.")
+            #     return func.HttpResponse("Server configuration error: Azure OpenAI settings missing.", status_code=500)
+            # client = AzureOpenAI(api_key=openai_api_key, azure_endpoint=azure_endpoint, api_version=api_version)
+
             # --- Call OpenAI ---
             # Define a system message (optional but recommended)
             system_message = """
