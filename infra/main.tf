@@ -46,7 +46,7 @@ resource "azurerm_linux_function_app" "archie-functionapp" {
 
   app_settings = {
     "FUNCTIONS_WORKER_RUNTIME" = "python"
-    "OPENAI_API_KEY"           = var.openai_api_key # Use the variable to get the API key
+    "AZURE_OPENAI_API_KEY"     = var.openai_api_key # Use the standard Azure OpenAI env var name
     "AzureWebJobsStorage"      = azurerm_storage_account.archie-storageaccount.primary_connection_string,
     "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.archie-appinsights.connection_string
     # Link Application Insights
