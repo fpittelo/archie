@@ -17,6 +17,18 @@ resource "azurerm_application_insights" "archie-appinsights" {
   location            = var.location_eu # Often best to keep App Insights close to the app
   resource_group_name = azurerm_resource_group.archie-dev.name
   application_type    = "web" # Standard type for web apps and functions
+  workspace_id        = azurerm_log_analytics_workspace.archie-law.id
+  tags                = var.tags
+}
+
+# Add this block to main.tf
+resource "azurerm_log_analytics_workspace" "archie-law" {
+  # Create a unique name, incorporating the environment is good practice
+  name                = "archie-law-${var.environment}"
+  location            = var.location_eu # Often good to keep LAW in same region as AppInsights/App
+  resource_group_name = azurerm_resource_group.archie-dev.name
+  sku                 = "PerGB2018" # Standard pricing tier, check Azure docs for options
+  retention_in_days   = 30          # Default retention period
   tags                = var.tags
 }
 
@@ -24,9 +36,7 @@ resource "azurerm_linux_function_app" "archie-functionapp" {
   name                = var.function_app_name
   resource_group_name = var.resource_group_name
   location            = var.location_eu
-
   service_plan_id = azurerm_service_plan.archie-appserviceplan.id
-
   storage_account_name   = azurerm_storage_account.archie-storageaccount.name
   storage_account_access_key = azurerm_storage_account.archie-storageaccount.primary_access_key
 
@@ -38,8 +48,9 @@ resource "azurerm_linux_function_app" "archie-functionapp" {
     "FUNCTIONS_WORKER_RUNTIME" = "python"
     "OPENAI_API_KEY"           = var.openai_api_key # Use the variable to get the API key
     "AzureWebJobsStorage"      = azurerm_storage_account.archie-storageaccount.primary_connection_string,
+    "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.archie-appinsights.connection_string
     # Link Application Insights
-    "APPINSIGHTS_INSTRUMENTATIONKEY" = azurerm_application_insights.archie-appinsights.instrumentation_key
+    #"APPINSIGHTS_INSTRUMENTATIONKEY" = azurerm_application_insights.archie-appinsights.instrumentation_key
   }
 
   depends_on = [
