@@ -224,9 +224,10 @@ Archie will Respond here.
             errorMessage.style.display = 'none';
 
             // Replace with your Function App endpoint URL
-            const functionAppUrl = 'https://archie-funcapp.azurewebsites.net/api/HttpExample?name=Azure';
+            // Use a relative path for the API endpoint within the Static Web App
+            const apiEndpoint = '/api/ArchieMCPEndpoint';
 
-            fetch(`${functionAppUrl}&query=${encodeURIComponent(queryInput)}`)
+            fetch(`${apiEndpoint}?query=${encodeURIComponent(queryInput)}`)
                 .then(response => {
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
